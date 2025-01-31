@@ -1,4 +1,6 @@
+import pandas as pd
 import synnax as sy
+from synnax import DataType
 from synnax.hardware.ni import *
 import numpy as np
 from synnax.hardware.device import Device
@@ -10,7 +12,7 @@ client = sy.Synnax(
     password = "Bill",
 )
 
-DEBUG = True
+DEBUG = False
 
 dev_5 = client.hardware.devices.retrieve(model="USB-6343", location="Dev6") #
 dev_6 = client.hardware.devices.retrieve(model="USB-6343", location="Dev6")
@@ -77,6 +79,7 @@ if digital_write_task is None:
     print("New digital write task is being created.")
     digital_write_task = DigitalWriteTask(
         name = "Digital Write Task",
+        device = dev_5.key,
         state_rate=sy.Rate.HZ * 1000,
         data_saving=True,
         channels = []
@@ -85,4 +88,79 @@ if digital_write_task is None:
 if DEBUG:
     print("Digital task = ", digital_write_task)
 
+
+
+def input_excel(file_path: str):
+    try:
+        df = pd.read_excel(file_path)
+    except FileNotFoundError as e:
+        print("File not found:", e)
+        return
+    except ValueError as e:
+        print("Invalid Excel file or format:", e)
+        return
+    except Exception as e:
+        print("Unexpected error:", e)
+        return
+
+    print("Excel file succesfully read")
+    return df.head(300)
+
+def process_excel(file: pd.DataFrame):
+    print(f"reading {len(file)} rows")
+    for _, row in file.iterrows():
+        try:
+            if row["Sensor Type"] == "VLV":
+                populate_digital_out(row)
+            # elif row["Sensor Type"] in ["PT", "TC", "LC"]:
+            #     populate_analog(row)
+            else:
+                print("Unexpected sensor type:", row["Sensor Type"])
+        except KeyError as e:
+            print(f"Missing column in row: {e}")
+            return
+        except Exception as e:
+            print(f"Unexpected error populating tasks: {e}")
+
+#
+# def populate_digital_out(row):
+#     print(f"processing row: {row}")
+#     channel = int(row["Channel"])
+#
+#     bcls_state_time = client.channels.create(
+#         name="bcls_state_time",
+#         is_index=True,
+#         data_type=sy.DataType.TIMESTAMP,
+#         retrieve_if_name_exists=True,
+#     )
+#
+#     state_chan = client.channels.create(
+#         name = f"bcls_state_{channel}",
+#         data_type = sy.DataType.UINT8,
+#         retrieve_if_name_exists=True,
+#         index=bcls_state_time.key,
+#     )
+#
+#     cmd_chan = client.channels.create(
+#         name = f"bcls_vlv_{channel}",
+#         data_type = sy.DataType.UINT8,
+#         retrieve_if_name_exists=True,
+#     )
+#
+#     do_channel = DOChan(
+#         cmd_channel = cmd_chan.key,
+#         state_channel = state_chan.key,
+#         port=0,
+#         line=channel
+#     )
+#
+#     digital_task.config.channels.append(do_channel)
+#     print("Digital task succesfully populated.")
+#
+#
+
+
+data = input_excel("test_configuration.xlsx")
+
+# process_excel(data)
 
