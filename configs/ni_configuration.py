@@ -10,7 +10,7 @@ client = sy.Synnax(
     password = "Bill",
 )
 
-DEBUG = False
+DEBUG = True
 
 dev_5 = client.hardware.devices.retrieve(model="USB-6343", location="Dev6") #
 dev_6 = client.hardware.devices.retrieve(model="USB-6343", location="Dev6")
@@ -46,13 +46,13 @@ if DEBUG:
     print("Analog task = ", analog_task)
 
 
-# create digital read task
+# Create digital read task
 digital_read_task = None
 try:
-    digital_task = client.hardware.tasks.retrieve(name="Digital Read Task")
+    digital_read_task = client.hardware.tasks.retrieve(name="Digital Read Task")
 except:
-    digital_task = None
-if digital_task is None:
+    digital_read_task = None
+if digital_read_task is None:
     print("New digital read task is being created.")
     digital_task = DigitalReadTask(
         name = "Digital Read Task",
@@ -62,6 +62,27 @@ if digital_task is None:
         data_saving=True,
         channels = []
     )
-    client.hardware.tasks.create([digital_task])
+    client.hardware.tasks.create([digital_read_task])
 if DEBUG:
-    print("Digital task = ", digital_task)
+    print("Digital task = ", digital_read_task)
+
+
+# Create digital write task
+digital_write_task = None
+try:
+    digital_write_task = client.hardware.tasks.retrieve(name="Digital Write Task")
+except:
+    digital_write_task = None
+if digital_write_task is None:
+    print("New digital write task is being created.")
+    digital_write_task = DigitalWriteTask(
+        name = "Digital Write Task",
+        state_rate=sy.Rate.HZ * 1000,
+        data_saving=True,
+        channels = []
+    )
+    client.hardware.tasks.create([digital_write_task])
+if DEBUG:
+    print("Digital task = ", digital_write_task)
+
+
