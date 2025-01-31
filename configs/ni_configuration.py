@@ -44,3 +44,24 @@ if analog_task is None:
 
 if DEBUG:
     print("Analog task = ", analog_task)
+
+
+# create digital read task
+digital_read_task = None
+try:
+    digital_task = client.hardware.tasks.retrieve(name="Digital Read Task")
+except:
+    digital_task = None
+if digital_task is None:
+    print("New digital read task is being created.")
+    digital_task = DigitalReadTask(
+        name = "Digital Read Task",
+
+        sample_rate = sy.Rate.HZ * 1000,
+        stream_rate = sy.Rate.HZ * 100,
+        data_saving=True,
+        channels = []
+    )
+    client.hardware.tasks.create([digital_task])
+if DEBUG:
+    print("Digital task = ", digital_task)
