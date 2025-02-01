@@ -1,9 +1,8 @@
 import pandas as pd
 import synnax as sy
-from synnax import DataType
-from synnax.hardware.ni import *
-import numpy as np
-from synnax.hardware.device import Device
+from synnax.hardware import ni
+from configs.processing import process_vlv, process_pt, process_tc
+
 
 client = sy.Synnax(
     host = "128.46.118.59",
@@ -12,88 +11,97 @@ client = sy.Synnax(
     password = "Bill",
 )
 
-DEBUG = True
 
-dev_5 = client.hardware.devices.retrieve(model="USB-6343", location="Dev6") #
-dev_6 = client.hardware.devices.retrieve(model="USB-6343", location="Dev6")
+def main():
+    dev_5 = client.hardware.devices.retrieve(model="USB-6343", location="Dev5")
+    dev_6 = client.hardware.devices.retrieve(model="USB-6343", location="Dev6")
 
-if DEBUG:
-    print("Device 5 = ", dev_5)
-    print("Device 6 = ", dev_6)
-if not dev_5 or not dev_6:
-    print("One or both devices not found, please configure manually.")
-    exit(1)
+    data = input_csv("test_configuration.csv")
+    analog_read_task, digital_write_task, digital_read_task = create_tasks(dev_5)
 
-# TODO: Create AI, DO, and DI for Dev 5 and Dev 6
+    process_excel(data, analog_read_task, digital_write_task, digital_read_task, dev_5)
 
-# # Create analog task
-# analog_read_task = None
-#
-# try:
-#     analog_read_task = client.hardware.tasks.retrieve(name="Analog Read Task")
-# except:
-#     analog_read_task = None
-#
-# if analog_read_task is None:
-#     print("New analog task is being created.")
-#     analog_read_task = AnalogReadTask(
-#         name = "Analog Read Task",
-#         sample_rate = sy.Rate.HZ * 1000,
-#         stream_rate = sy.Rate.HZ * 100,
-#         data_saving=True,
-#         channels = []
-#     )
-#     client.hardware.tasks.create([analog_read_task])
-#
-# if DEBUG:
-#     print("Analog task = ", analog_read_task)
+    if digital_write_task.config.channels:
+        print("Attempting to configure digital write task...")
+        client.hardware.tasks.configure(task=digital_write_task, timeout=5)
+        print("Digital write task configured.")
+    else:
+        print("No channels added to digital write task.")
+
+    if analog_read_task.config.channels:
+        print("Attempting to configure analog read task...")
+        client.hardware.tasks.configure(task=analog_read_task, timeout=5)
+        print("Analog read task configured.")
+    else:
+        print("No channels added to analog read task.")
 
 
-# # Create digital read task
-# digital_read_task = None
-# try:
-#     digital_read_task = client.hardware.tasks.retrieve(name="Digital Read Task")
-# except:
-#     digital_read_task = None
-# if digital_read_task is None:
-#     print("New digital read task is being created.")
-#     digital_task = DigitalReadTask(
-#         name = "Digital Read Task",
-#
-#         sample_rate = sy.Rate.HZ * 1000,
-#         stream_rate = sy.Rate.HZ * 100,
-#         data_saving=True,
-#         channels = []
-#     )
-#     client.hardware.tasks.create([digital_read_task])
-# if DEBUG:
-#     print("Digital task = ", digital_read_task)
 
 
-# Create digital write task
-digital_write_task = None
-try:
-    digital_write_task = client.hardware.tasks.retrieve(name="Digital Write Task")
-except:
-    digital_write_task = None
-if digital_write_task is None:
-    print("New digital write task is being created.")
+def create_tasks(card: sy.Device):
 
+    # I have been getting a weird error that if I try to edit the task and add channels after its been created, I can't.
+    # I do not think creating and deleting tasks is the most efficient way to do this, but who knows. @charlie
 
-    digital_write_task = DigitalWriteTask(
-        name = "Digital Write Task",
-        device = dev_5.key,
-        state_rate=sy.Rate.HZ * 1000,
+    try:
+        analog_read_task = client.hardware.tasks.retrieve(name="Analog Input")
+    except:
+        analog_read_task = None
+
+    if analog_read_task is not None:
+        client.hardware.tasks.delete(analog_read_task.key)
+
+    print("Creating new analog read task...")
+    analog_read_task = ni.AnalogReadTask(
+        name="Analog Input",
+        device=card.key,
+        sample_rate=sy.Rate.HZ * 50,
+        stream_rate=sy.Rate.HZ * 25,
         data_saving=True,
         channels=[],
     )
 
-if DEBUG:
-    print("Digital task = ", digital_write_task)
 
 
+    try:
+        digital_write_task = client.hardware.tasks.retrieve(name="Digital Output")
+    except:
+        digital_write_task = None
+    if digital_write_task is not None:
+        client.hardware.tasks.delete(digital_write_task.key)
 
-def input_csv(file_path: str):
+
+    print("Creating new digital write task...")
+    digital_write_task = ni.DigitalWriteTask(
+        name="Digital Output",
+        device=card.key,
+        state_rate=sy.Rate.HZ * 50,
+        data_saving=True,
+        channels=[],
+    )
+
+    try:
+        digital_read_task = client.hardware.tasks.retrieve(name="Digital Input")
+    except:
+        digital_read_task = None
+    if digital_read_task is not None:
+        client.hardware.tasks.delete(digital_read_task.key)
+
+    print("Creating new digital read task...")
+    digital_read_task = ni.DigitalReadTask(
+        name="Digital Input",
+        device=card.key,
+        sample_rate=sy.Rate.HZ * 50,
+        stream_rate=sy.Rate.HZ * 25,
+        data_saving=True,
+        channels=[],
+    )
+
+
+    return analog_read_task, digital_write_task, digital_read_task
+
+
+def input_csv(file_path: str) -> pd.DataFrame:
     try:
         df = pd.read_csv(file_path)
     except FileNotFoundError as e:
@@ -103,75 +111,38 @@ def input_csv(file_path: str):
         print("Invalid CSV file or format:", e)
         return
     except Exception as e:
-        print("Unexpected error:", e)
+        print("Check sheet read in:", e)
         return
 
-    print("CSV file succesfully read")
+    print("CSV file succesfully read.")
     return df.head(300)
 
-def process_csv(file: pd.DataFrame):
-    print(f"reading {len(file)} rows")
+def process_excel(file: pd.DataFrame, analog_read_task, digital_write_task, digital_read_task, card: sy.Device):
+
+    print("Processing data...")
+
     for _, row in file.iterrows():
         try:
             if row["Sensor Type"] == "VLV":
-                populate_digital_out(row)
-            elif row["Sensor Type"] in ["PT", "TC", "RTD"]:
-                # populate_analog(row)
-                print("Analog input not implemented yet")
-            else:
-                print("Unexpected sensor type:", row["Sensor Type"])
+                process_vlv(row, digital_write_task, card)
+            elif row["Sensor Type"] == "PT":
+                process_pt(row, analog_read_task, card)
+            elif row["Sensor Type"] == "TC":
+                process_tc(row, analog_read_task, card)
+            # elif row["Sensor Type"] == "LC":
+            #     process_lc(row, analog_task, analog_card)
+            # # elif (
+            # #     row["Sensor Type"] == "RAW"
+            # # ):  # for thermister and other raw voltage data
+            # #     process_raw(row, analog_task, analog_card)
+            # else:
+            #     print(f"Sensor type {row["Sensor Type"]} not recognized")
         except KeyError as e:
             print(f"Missing column in row: {e}")
             return
         except Exception as e:
-            print(f"Unexpected error populating tasks: {e}")
+            print(f"Error populating tasks: {e}")
 
 
-# TODO: Fix rate error in populating digital outputs
-#
-def populate_digital_out(row):
-    print(f"processing row: {row}")
-    channel = int(row["Channel"])
-
-    bcls_state_time = client.channels.create(
-        name="bcls_state_time",
-        is_index=True,
-        data_type=sy.DataType.TIMESTAMP,
-        retrieve_if_name_exists=True,
-    )
-    print("bcls_state_time channel populated.")
-
-    state_chan = client.channels.create(
-        name = f"bcls_state_{channel}",
-        data_type = sy.DataType.UINT8,
-        retrieve_if_name_exists=True,
-        index=bcls_state_time.key,
-    )
-    print("State channel populated.")
-
-    cmd_chan = client.channels.create(
-        name = f"bcls_vlv_{channel}",
-        data_type = sy.DataType.UINT8,
-        retrieve_if_name_exists=True,
-    )
-    print("Command channel populated.")
-
-    do_channel = DOChan(
-        cmd_channel = cmd_chan.key,
-        state_channel = state_chan.key,
-        port=0,
-        line=channel
-    )
-    print("DO channel populated.")
-    print(digital_write_task.config)
-    digital_write_task.config.channels.append(do_channel)
-
-    print("Digital task populated.")
-
-
-
-
-data = input_csv("test_configuration.csv")
-
-process_csv(data)
-
+if __name__ == "__main__":
+    main()
