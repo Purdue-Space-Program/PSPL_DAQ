@@ -24,7 +24,7 @@ def process_vlv(row: pd.Series, digital_write_task: ni.DigitalWriteTask, card: s
         data_type=sy.DataType.UINT8,
         retrieve_if_name_exists=True,
         index=BCLS_state_time.key,
-        rate=sy.Rate.HZ * 1000,
+        rate=sy.Rate.HZ * 50,
 
     )
 
@@ -32,7 +32,7 @@ def process_vlv(row: pd.Series, digital_write_task: ni.DigitalWriteTask, card: s
         name=f"BCLS_cmd_{channel}",
         data_type=sy.DataType.UINT8,
         retrieve_if_name_exists=True,
-        rate=sy.Rate.HZ * 1000,
+        rate=sy.Rate.HZ * 50,
     )
 
     do_chan = ni.DOChan(
@@ -40,9 +40,82 @@ def process_vlv(row: pd.Series, digital_write_task: ni.DigitalWriteTask, card: s
         state_channel=state_chan.key,
         port = 0,
         line = channel,
-        rate=sy.Rate.HZ * 1000,
+        rate=sy.Rate.HZ * 50,
     )
 
     digital_write_task.config.channels.append(do_chan)
     print("Added channel:", channel)
+
+
+def process_pt(row: pd.Series, analog_read_task: ni.AnalogReadTask, card: sy.Device):
+    channel_num = int(row["Channel"])
+
+    BCLS_ai_time = client.channels.create(
+        name="BCLS_ai_time",
+        is_index=True,
+        data_type=sy.DataType.TIMESTAMP,
+        retrieve_if_name_exists=True,
+    )
+
+    pt_chan = client.channels.create(
+        name=f"BCLS_pt_{channel_num}",
+        data_type=sy.DataType.FLOAT32, # Idk data types, this is just what was suggested
+        retrieve_if_name_exists=True,
+        index=BCLS_ai_time.key,
+        rate=sy.Rate.HZ * 50,
+    )
+
+    ai_chan = ni.AIVoltageChan(
+        channel=pt_chan.key,
+        port = 0,
+        device=card.key,
+        custom_scale = ni.LinScale(
+            slope = row["Slope"],
+            y_intercept = row["Offset"],
+            pre_scaled_units = "Volts",
+            scaled_units = "PoundsPerSquareInch",
+        ),
+        terminal_config = "Diff",
+        rate=sy.Rate.HZ * 50,
+    )
+
+    analog_read_task.config.channels.append(ai_chan)
+    print("Added channel:", channel_num)
+
+def process_tc(row: pd.Series, analog_read_task: ni.AnalogReadTask, card: sy.Device):
+
+    channel_num = int(row["Channel"])
+    port = 0
+
+    BCLS_ai_time = client.channels.create(
+        name="BCLS_ai_time",
+        is_index=True,
+        data_type=sy.DataType.TIMESTAMP,
+        retrieve_if_name_exists=True,
+    )
+
+    tc_chan = client.channels.create(
+        name=f"BCLS_tc_{channel_num}",
+        data_type=sy.DataType.FLOAT32,
+        retrieve_if_name_exists=True,
+        rate=sy.Rate.HZ * 50,
+    )
+
+    ai_chan = ni.AIVoltageChan(
+        channel = tc_chan.key,
+        port = 0,
+        device = card.key,
+        custom_scale = ni.LinScale(
+            slope = row["Slope"],
+            y_intercept = row["Offset"],
+            pre_scaled_units = "Volts",
+            scaled_units ="Celsius",
+        ),
+
+        terminal_config = "Diff",
+        rate = sy.Rate.HZ * 50,
+
+    )
+
+
 
