@@ -1,8 +1,8 @@
 import pandas as pd
 import synnax as sy
 from synnax.hardware import ni
-from configs.processing import process_vlv, process_pt, process_tc
-
+from configs.processing import process_vlv, process_pt, process_tc, process_pi
+22
 
 client = sy.Synnax(
     host = "128.46.118.59",
@@ -34,6 +34,13 @@ def main():
         print("Analog read task configured.")
     else:
         print("No channels added to analog read task.")
+
+    if digital_read_task.config.channels:
+        print("Attempting to configure digital read task...")
+        client.hardware.tasks.configure(task=digital_read_task, timeout=5)
+        print("Digital read task configured.")
+    else:
+        print("No channels added to digital read task.")
 
 
 
@@ -129,14 +136,16 @@ def process_excel(file: pd.DataFrame, analog_read_task, digital_write_task, digi
                 process_pt(row, analog_read_task, card)
             elif row["Sensor Type"] == "TC":
                 process_tc(row, analog_read_task, card)
+            elif row["Sensor Type"] == "PI":
+                process_pi(row, digital_read_task, card)
             # elif row["Sensor Type"] == "LC":
             #     process_lc(row, analog_task, analog_card)
             # # elif (
             # #     row["Sensor Type"] == "RAW"
             # # ):  # for thermister and other raw voltage data
             # #     process_raw(row, analog_task, analog_card)
-            # else:
-            #     print(f"Sensor type {row["Sensor Type"]} not recognized")
+            else:
+                print(f"Sensor type {row["Sensor Type"]} not recognized")
         except KeyError as e:
             print(f"Missing column in row: {e}")
             return
