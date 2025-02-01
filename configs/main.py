@@ -16,6 +16,9 @@ def main():
     dev_5 = client.hardware.devices.retrieve(model="USB-6343", location="Dev5")
     dev_6 = client.hardware.devices.retrieve(model="USB-6343", location="Dev6")
 
+    # TODO Figure out file structures for multiple devs
+    # Thinking Analog / Digital for each device?
+
     data = input_csv("test_configuration.csv")
     analog_read_task, digital_write_task, digital_read_task = create_tasks(dev_5)
 
