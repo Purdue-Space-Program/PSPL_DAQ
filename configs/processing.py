@@ -1,4 +1,5 @@
 import synnax as sy
+from numpy.f2py.auxfuncs import process_f2cmap_dict
 from synnax.hardware import ni
 import pandas as pd
 
@@ -12,6 +13,7 @@ client = sy.Synnax(
 def process_vlv(row: pd.Series, digital_write_task: ni.DigitalWriteTask, card: sy.Device):
 
     channel = int(row["Channel"])
+    device_name = row["Name"]
 
     BCLS_state_time = client.channels.create(
         name="BCLS_state_time",
@@ -19,8 +21,16 @@ def process_vlv(row: pd.Series, digital_write_task: ni.DigitalWriteTask, card: s
         data_type=sy.DataType.TIMESTAMP,
         retrieve_if_name_exists=True,
     )
+
+    BCLS_cmd_time = client.channels.create(
+        name="BCLS_cmd_time",
+        is_index=True,
+        data_type=sy.DataType.TIMESTAMP,
+        retrieve_if_name_exists=True,
+    )
+
     state_chan = client.channels.create(
-        name=f"BCLS_state_{channel}",
+        name=f"{device_name}_state",
         data_type=sy.DataType.UINT8,
         retrieve_if_name_exists=True,
         index=BCLS_state_time.key,
@@ -29,9 +39,10 @@ def process_vlv(row: pd.Series, digital_write_task: ni.DigitalWriteTask, card: s
     )
 
     cmd_chan = client.channels.create(
-        name=f"BCLS_cmd_{channel}",
+        name=f"{device_name}",
         data_type=sy.DataType.UINT8,
         retrieve_if_name_exists=True,
+        index=BCLS_cmd_time.key,
         rate=sy.Rate.HZ * 50,
     )
 
@@ -48,6 +59,7 @@ def process_vlv(row: pd.Series, digital_write_task: ni.DigitalWriteTask, card: s
 
 
 def process_pt(row: pd.Series, analog_read_task: ni.AnalogReadTask, card: sy.Device):
+    device_name = row["Name"]
     channel_num = int(row["Channel"])
 
     BCLS_ai_time = client.channels.create(
@@ -58,7 +70,7 @@ def process_pt(row: pd.Series, analog_read_task: ni.AnalogReadTask, card: sy.Dev
     )
 
     pt_chan = client.channels.create(
-        name=f"BCLS_pt_{channel_num}",
+        name=f"{device_name}",
         data_type=sy.DataType.FLOAT32, # Idk data types, this is just what was suggested
         retrieve_if_name_exists=True,
         index=BCLS_ai_time.key,
@@ -83,7 +95,7 @@ def process_pt(row: pd.Series, analog_read_task: ni.AnalogReadTask, card: sy.Dev
     print("Added channel:", channel_num)
 
 def process_tc(row: pd.Series, analog_read_task: ni.AnalogReadTask, card: sy.Device):
-
+    device_name = row["Name"]
     channel_num = int(row["Channel"])
     port = 0
 
@@ -95,7 +107,7 @@ def process_tc(row: pd.Series, analog_read_task: ni.AnalogReadTask, card: sy.Dev
     )
 
     tc_chan = client.channels.create(
-        name=f"BCLS_tc_{channel_num}",
+        name=f"{device_name}",
         data_type=sy.DataType.FLOAT32,
         retrieve_if_name_exists=True,
         rate=sy.Rate.HZ * 50,
@@ -116,6 +128,37 @@ def process_tc(row: pd.Series, analog_read_task: ni.AnalogReadTask, card: sy.Dev
         rate = sy.Rate.HZ * 50,
 
     )
+    analog_read_task.config.channels.append(ai_chan)
+    print("Added channel:", channel_num)
 
 
+def process_pi(row: pd.Series, digital_read_task: ni.DigitalReadTask, card: sy.Device):
+    device_name = row["Name"]
+    line = int(row["Channel"])
+    port = 0
 
+    BCLS_di_time = client.channels.create(
+        name="BCLS_di_time",
+        is_index=True,
+        data_type=sy.DataType.TIMESTAMP,
+        retrieve_if_name_exists=True,
+    )
+
+    pi_chan = client.channels.create(
+        name=f"{device_name}",
+        data_type=sy.DataType.UINT8,
+        retrieve_if_name_exists=True,
+        index=BCLS_di_time.key,
+        rate=sy.Rate.HZ * 50,
+    )
+
+    di_chan = ni.DIChan(
+        channel=pi_chan.key,
+        port=0,
+        line=line,
+    )
+
+    digital_read_task.config.channels.append(di_chan)
+    print("Added channel:", line)
+
+# TODO: combine TC & PT processing (they are the same except for the scale)
