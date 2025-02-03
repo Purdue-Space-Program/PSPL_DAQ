@@ -4,7 +4,7 @@ import pandas as pd
 import synnax as sy
 from synnax.hardware import ni
 from synnax.io.factory import READERS
-from configs.processing import process_vlv, process_pt, process_tc, process_pi
+from configs.processing import process_analog_input, process_digital_input, process_digital_output
 
 
 SAMPLE_RATE = 1000 # Hz
@@ -16,6 +16,8 @@ DEV_5_CONTROL_WIRING_FILEPATH = "CMS_Control_Wiring_Dev5.xlsx"
 DEV_6_DATA_WIRING_FILEPATH = "CMS_Data_Wiring_Dev6.xlsx"
 DEV_6_CONTROL_WIRING_FILEPATH = "CMS_Control_Wiring_Dev6.xlsx"
 
+# TODO: Add zeroin data and fix tare = 14.7
+
 
 # Connect to Synnax
 client = sy.Synnax(
@@ -26,51 +28,83 @@ client = sy.Synnax(
 )
 
 
-
-
 def main():
     dev_5 = client.hardware.devices.retrieve(model="USB-6343", location="Dev5")
     dev_6 = client.hardware.devices.retrieve(model="USB-6343", location="Dev6")
-    #
-    #
-    # dev_5_data_wiring = input_excel(DEV_5_DATA_WIRING_FILEPATH)
-    # dev_5_control_wiring = input_excel(DEV_5_CONTROL_WIRING_FILEPATH)
 
+
+    # Dev 5 Data
+    dev_5_data_wiring = input_excel(DEV_5_DATA_WIRING_FILEPATH)
+    dev_5_control_wiring = input_excel(DEV_5_CONTROL_WIRING_FILEPATH)
+
+    # Dev 6 Data
     dev_6_data_wiring = input_excel(DEV_6_DATA_WIRING_FILEPATH)
-    # dev_6_control_wiring = input_excel(DEV_6_CONTROL_WIRING_FILEPATH)
+    dev_6_control_wiring = input_excel(DEV_6_CONTROL_WIRING_FILEPATH)
 
 
-    # TODO Figure out file structures for multiple devs
-    # Thinking Analog / Digital for each device?
 
-    # dev_5_analog_read_task, dev_5_digital_write_task, dev_5_digital_read_task = create_tasks(dev_5)
+    # Create tasks
+    dev_5_analog_read_task, dev_5_digital_write_task, dev_5_digital_read_task = create_tasks(dev_5)
     dev_6_analog_read_task, dev_6_digital_write_task, dev_6_digital_read_task = create_tasks(dev_6)
 
+    # Process data
+    print("Processing data...")
+
+    process_analog_input(dev_5_data_wiring, dev_5_analog_read_task, dev_5, stream_rate=STREAM_RATE, sample_rate=SAMPLE_RATE)
+    process_analog_input(dev_6_data_wiring, dev_6_analog_read_task, dev_6, stream_rate=STREAM_RATE, sample_rate=SAMPLE_RATE)
+
+    process_digital_input(dev_5_data_wiring, dev_5_digital_read_task, dev_5, stream_rate=STREAM_RATE, sample_rate=SAMPLE_RATE)
+    process_digital_input(dev_6_data_wiring, dev_6_digital_read_task, dev_6, stream_rate=STREAM_RATE, sample_rate=SAMPLE_RATE)
+
+    process_digital_output(dev_5_control_wiring, dev_5_digital_write_task, dev_5, stream_rate=STREAM_RATE, sample_rate=SAMPLE_RATE)
+    process_digital_output(dev_6_control_wiring, dev_6_digital_write_task, dev_6, stream_rate=STREAM_RATE, sample_rate=SAMPLE_RATE)
 
 
 
-    # process_excel(data, analog_read_task, digital_write_task, digital_read_task, dev_5)
-    #
-    # if digital_write_task.config.channels:
-    #     print("Attempting to configure digital write task...")
-    #     client.hardware.tasks.configure(task=digital_write_task, timeout=5)
-    #     print("Digital write task configured.")
-    # else:
-    #     print("No channels added to digital write task.")
-    #
-    # if analog_read_task.config.channels:
-    #     print("Attempting to configure analog read task...")
-    #     client.hardware.tasks.configure(task=analog_read_task, timeout=5)
-    #     print("Analog read task configured.")
-    # else:
-    #     print("No channels added to analog read task.")
-    #
-    # if digital_read_task.config.channels:
-    #     print("Attempting to configure digital read task...")
-    #     client.hardware.tasks.configure(task=digital_read_task, timeout=5)
-    #     print("Digital read task configured.")
-    # else:
-    #     print("No channels added to digital read task.")
+
+    if dev_5_digital_write_task.config.channels:
+        print("Attempting to configure digital write task...")
+        client.hardware.tasks.configure(task=dev_5_digital_write_task, timeout=5)
+        print("Digital write task configured.")
+    else:
+        print("No channels added to digital write task.")
+
+    if dev_6_digital_write_task.config.channels:
+        print("Attempting to configure digital write task...")
+        client.hardware.tasks.configure(task=dev_6_digital_write_task, timeout=5)
+        print("Digital write task configured.")
+    else:
+        print("No channels added to digital write task.")
+
+
+    if dev_5_analog_read_task.config.channels:
+        print("Attempting to configure analog read task...")
+        client.hardware.tasks.configure(task=dev_5_analog_read_task, timeout=5)
+        print("Dev 5 Analog read task configured.")
+    else:
+        print("No channels added to analog read task.")
+
+    if dev_6_analog_read_task.config.channels:
+        print("Attempting to configure analog read task...")
+        client.hardware.tasks.configure(task=dev_6_analog_read_task, timeout=5)
+        print("Dev 6 Analog read task configured.")
+    else:
+        print("No channels added to analog read task.")
+
+
+    if dev_5_digital_read_task.config.channels:
+        print("Attempting to configure digital read task...")
+        client.hardware.tasks.configure(task=dev_5_digital_read_task, timeout=5)
+        print("Digital read task configured.")
+    else:
+        print("No channels added to digital read task.")
+
+    if dev_6_digital_read_task.config.channels:
+        print("Attempting to configure digital read task...")
+        client.hardware.tasks.configure(task=dev_6_digital_read_task, timeout=5)
+        print("Digital read task configured.")
+    else:
+        print("No channels added to digital read task.")
 
 
 
@@ -144,7 +178,7 @@ def input_excel(file_path: str):
     Transposes the 'Header' sheet.
 
     Parameters:
-        dict: Dictionary with sheet names as keys and pandas DataFrames as values
+
 
     """
 
@@ -163,42 +197,10 @@ def input_excel(file_path: str):
 
     print("EXCEL file succesfully read.")
 
-    # Create a dictionary to store all sheets
-    all_sheets = {}
-
-    return all_sheets
 
 
+    return excel_file
 
-
-
-def process_excel(file: pd.DataFrame, analog_read_task, digital_write_task, digital_read_task, card: sy.Device):
-
-    print("Processing data...")
-
-    for _, row in file.iterrows():
-        try:
-            if row["Sensor Type"] == "VLV":
-                process_vlv(row, digital_write_task, card)
-            elif row["Sensor Type"] == "PT":
-                process_pt(row, analog_read_task, card)
-            elif row["Sensor Type"] == "TC":
-                process_tc(row, analog_read_task, card)
-            elif row["Sensor Type"] == "PI":
-                process_pi(row, digital_read_task, card)
-            # elif row["Sensor Type"] == "LC":
-            #     process_lc(row, analog_task, analog_card)
-            # # elif (
-            # #     row["Sensor Type"] == "RAW"
-            # # ):  # for thermister and other raw voltage data
-            # #     process_raw(row, analog_task, analog_card)
-            else:
-                print(f"Sensor type {row["Sensor Type"]} not recognized")
-        except KeyError as e:
-            print(f"Missing column in row: {e}")
-            return
-        except Exception as e:
-            print(f"Error populating tasks: {e}")
 
 
 if __name__ == "__main__":
