@@ -1,9 +1,23 @@
+from random import sample
+
 import pandas as pd
 import synnax as sy
 from synnax.hardware import ni
+from synnax.io.factory import READERS
 from configs.processing import process_vlv, process_pt, process_tc, process_pi
-22
 
+
+SAMPLE_RATE = 1000 # Hz
+STREAM_RATE = 100 # Hz
+
+DEV_5_DATA_WIRING_FILEPATH = "CMS_Data_Wiring_Dev5.xlsx"
+DEV_5_CONTROL_WIRING_FILEPATH = "CMS_Control_Wiring_Dev5.xlsx"
+
+DEV_6_DATA_WIRING_FILEPATH = "CMS_Data_Wiring_Dev6.xlsx"
+DEV_6_CONTROL_WIRING_FILEPATH = "CMS_Control_Wiring_Dev6.xlsx"
+
+
+# Connect to Synnax
 client = sy.Synnax(
     host = "128.46.118.59",
     port = 9090,
@@ -12,49 +26,63 @@ client = sy.Synnax(
 )
 
 
+
+
 def main():
     dev_5 = client.hardware.devices.retrieve(model="USB-6343", location="Dev5")
     dev_6 = client.hardware.devices.retrieve(model="USB-6343", location="Dev6")
+    #
+    #
+    # dev_5_data_wiring = input_excel(DEV_5_DATA_WIRING_FILEPATH)
+    # dev_5_control_wiring = input_excel(DEV_5_CONTROL_WIRING_FILEPATH)
+
+    dev_6_data_wiring = input_excel(DEV_6_DATA_WIRING_FILEPATH)
+    # dev_6_control_wiring = input_excel(DEV_6_CONTROL_WIRING_FILEPATH)
+
 
     # TODO Figure out file structures for multiple devs
     # Thinking Analog / Digital for each device?
 
-    data = input_csv("test_configuration.csv")
-    analog_read_task, digital_write_task, digital_read_task = create_tasks(dev_5)
+    # dev_5_analog_read_task, dev_5_digital_write_task, dev_5_digital_read_task = create_tasks(dev_5)
+    dev_6_analog_read_task, dev_6_digital_write_task, dev_6_digital_read_task = create_tasks(dev_6)
 
-    process_excel(data, analog_read_task, digital_write_task, digital_read_task, dev_5)
 
-    if digital_write_task.config.channels:
-        print("Attempting to configure digital write task...")
-        client.hardware.tasks.configure(task=digital_write_task, timeout=5)
-        print("Digital write task configured.")
-    else:
-        print("No channels added to digital write task.")
 
-    if analog_read_task.config.channels:
-        print("Attempting to configure analog read task...")
-        client.hardware.tasks.configure(task=analog_read_task, timeout=5)
-        print("Analog read task configured.")
-    else:
-        print("No channels added to analog read task.")
 
-    if digital_read_task.config.channels:
-        print("Attempting to configure digital read task...")
-        client.hardware.tasks.configure(task=digital_read_task, timeout=5)
-        print("Digital read task configured.")
-    else:
-        print("No channels added to digital read task.")
+    # process_excel(data, analog_read_task, digital_write_task, digital_read_task, dev_5)
+    #
+    # if digital_write_task.config.channels:
+    #     print("Attempting to configure digital write task...")
+    #     client.hardware.tasks.configure(task=digital_write_task, timeout=5)
+    #     print("Digital write task configured.")
+    # else:
+    #     print("No channels added to digital write task.")
+    #
+    # if analog_read_task.config.channels:
+    #     print("Attempting to configure analog read task...")
+    #     client.hardware.tasks.configure(task=analog_read_task, timeout=5)
+    #     print("Analog read task configured.")
+    # else:
+    #     print("No channels added to analog read task.")
+    #
+    # if digital_read_task.config.channels:
+    #     print("Attempting to configure digital read task...")
+    #     client.hardware.tasks.configure(task=digital_read_task, timeout=5)
+    #     print("Digital read task configured.")
+    # else:
+    #     print("No channels added to digital read task.")
+
+
 
 
 
 
 def create_tasks(card: sy.Device):
 
-    # I have been getting a weird error that if I try to edit the task and add channels after its been created, I can't.
-    # I do not think creating and deleting tasks is the most efficient way to do this, but who knows. @charlie
+    card_name = card.location
 
     try:
-        analog_read_task = client.hardware.tasks.retrieve(name="Analog Input")
+        analog_read_task = client.hardware.tasks.retrieve(name=f"{card_name} Analog Input")
     except:
         analog_read_task = None
 
@@ -63,18 +91,17 @@ def create_tasks(card: sy.Device):
 
     print("Creating new analog read task...")
     analog_read_task = ni.AnalogReadTask(
-        name="Analog Input",
+        name=f"{card_name} Analog Input",
         device=card.key,
-        sample_rate=sy.Rate.HZ * 50,
-        stream_rate=sy.Rate.HZ * 25,
+        sample_rate=sy.Rate.HZ * SAMPLE_RATE,
+        stream_rate=sy.Rate.HZ * STREAM_RATE,
         data_saving=True,
         channels=[],
     )
 
 
-
     try:
-        digital_write_task = client.hardware.tasks.retrieve(name="Digital Output")
+        digital_write_task = client.hardware.tasks.retrieve(name=f"{card_name} Digital Output")
     except:
         digital_write_task = None
     if digital_write_task is not None:
@@ -83,15 +110,15 @@ def create_tasks(card: sy.Device):
 
     print("Creating new digital write task...")
     digital_write_task = ni.DigitalWriteTask(
-        name="Digital Output",
+        name=f"{card_name} Digital Output",
         device=card.key,
-        state_rate=sy.Rate.HZ * 50,
+        state_rate=sy.Rate.HZ * SAMPLE_RATE,
         data_saving=True,
         channels=[],
     )
 
     try:
-        digital_read_task = client.hardware.tasks.retrieve(name="Digital Input")
+        digital_read_task = client.hardware.tasks.retrieve(name=f"{card_name} Digital Input")
     except:
         digital_read_task = None
     if digital_read_task is not None:
@@ -99,10 +126,10 @@ def create_tasks(card: sy.Device):
 
     print("Creating new digital read task...")
     digital_read_task = ni.DigitalReadTask(
-        name="Digital Input",
+        name=f"{card_name} Digital Input",
         device=card.key,
-        sample_rate=sy.Rate.HZ * 50,
-        stream_rate=sy.Rate.HZ * 25,
+        sample_rate=sy.Rate.HZ * SAMPLE_RATE,
+        stream_rate=sy.Rate.HZ * STREAM_RATE,
         data_saving=True,
         channels=[],
     )
@@ -111,21 +138,39 @@ def create_tasks(card: sy.Device):
     return analog_read_task, digital_write_task, digital_read_task
 
 
-def input_csv(file_path: str) -> pd.DataFrame:
+def input_excel(file_path: str):
+    """
+    Reads all sheets from an Excel file into a dictionary of DataFrames.
+    Transposes the 'Header' sheet.
+
+    Parameters:
+        dict: Dictionary with sheet names as keys and pandas DataFrames as values
+
+    """
+
+
     try:
-        df = pd.read_csv(file_path)
+        excel_file = pd.ExcelFile(file_path)
     except FileNotFoundError as e:
         print("File not found:", e)
         return
     except ValueError as e:
-        print("Invalid CSV file or format:", e)
+        print("Invalid EXCEL file or format:", e)
         return
     except Exception as e:
         print("Check sheet read in:", e)
         return
 
-    print("CSV file succesfully read.")
-    return df.head(300)
+    print("EXCEL file succesfully read.")
+
+    # Create a dictionary to store all sheets
+    all_sheets = {}
+
+    return all_sheets
+
+
+
+
 
 def process_excel(file: pd.DataFrame, analog_read_task, digital_write_task, digital_read_task, card: sy.Device):
 
