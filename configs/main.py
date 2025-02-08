@@ -1,206 +1,196 @@
-from random import sample
+from dataclasses import dataclass
+from typing import Optional, Tuple, Dict
+from pathlib import Path
 
 import pandas as pd
 import synnax as sy
 from synnax.hardware import ni
-from synnax.io.factory import READERS
 from configs.processing import process_analog_input, process_digital_input, process_digital_output
 
 
-SAMPLE_RATE = 1000 # Hz
-STREAM_RATE = 100 # Hz
+@dataclass
+class DAQConfig:
+    """Configuration settings for DAQ system"""
+    sample_rate: int = 1000  # Hz
+    stream_rate: int = 100  # Hz
+    host: str = "128.46.118.59"
+    port: int = 9090
+    username: str = "Bill"
+    password: str = "Bill"
 
-DEV_5_DATA_WIRING_FILEPATH = "CMS_Data_Wiring_Dev5.xlsx"
-DEV_5_CONTROL_WIRING_FILEPATH = "CMS_Control_Wiring_Dev5.xlsx"
 
-DEV_6_DATA_WIRING_FILEPATH = "CMS_Data_Wiring_Dev6.xlsx"
-DEV_6_CONTROL_WIRING_FILEPATH = "CMS_Control_Wiring_Dev6.xlsx"
+@dataclass
+class DeviceWiringPaths:
+    """Paths to wiring configuration files for a device"""
+    data_wiring: Path
+    control_wiring: Path
 
-# TODO: Add zeroin data and fix tare = 14.7
 
+class DAQSystem:
+    def __init__(self, config: DAQConfig):
+        self.config = config
+        self.client = self._connect_to_synnax()
 
-# Connect to Synnax
-client = sy.Synnax(
-    host = "128.46.118.59",
-    port = 9090,
-    username = "Bill",
-    password = "Bill",
-)
+    def _connect_to_synnax(self) -> sy.Synnax:
+        """Establish connection to Synnax server"""
+        try:
+            return sy.Synnax(
+                host=self.config.host,
+                port=self.config.port,
+                username=self.config.username,
+                password=self.config.password,
+            )
+        except Exception as e:
+            raise ConnectionError(f"Failed to connect to Synnax: {e}")
+
+    def get_device(self, location: str) -> sy.Device:
+        """Retrieve a device by its location"""
+        try:
+            return self.client.hardware.devices.retrieve(model="USB-6343", location=location)
+        except Exception as e:
+            raise ValueError(f"Failed to retrieve device {location}: {e}")
+
+    def read_wiring_config(self, paths: DeviceWiringPaths) -> Tuple[pd.ExcelFile, pd.ExcelFile]:
+        """Read wiring configuration files"""
+        try:
+            data_wiring = pd.ExcelFile(paths.data_wiring)
+            control_wiring = pd.ExcelFile(paths.control_wiring)
+            return data_wiring, control_wiring
+        except FileNotFoundError as e:
+            raise FileNotFoundError(f"Wiring configuration file not found: {e}")
+        except Exception as e:
+            raise ValueError(f"Error reading wiring configuration: {e}")
+
+    def create_device_tasks(self, device: sy.Device) -> Tuple[
+        ni.AnalogReadTask, ni.DigitalWriteTask, ni.DigitalReadTask]:
+        """Create or recreate all tasks for a device"""
+        card_name = device.location
+        tasks = []
+
+        task_configs = [
+            ("Analog Input", self._create_analog_read_task),
+            ("Digital Output", self._create_digital_write_task),
+            ("Digital Input", self._create_digital_read_task)
+        ]
+
+        for suffix, creator_func in task_configs:
+            task_name = f"{card_name} {suffix}"
+            self._delete_existing_task(task_name)
+            tasks.append(creator_func(card_name, device.key))
+
+        return tuple(tasks)
+
+    def _delete_existing_task(self, task_name: str) -> None:
+        """Delete task if it exists"""
+        try:
+            existing_task = self.client.hardware.tasks.retrieve(name=task_name)
+            if existing_task is not None:
+                self.client.hardware.tasks.delete(existing_task.key)
+        except Exception:
+            pass  # Task doesn't exist, continue
+
+    def _create_analog_read_task(self, card_name: str, device_key: str) -> ni.AnalogReadTask:
+        return ni.AnalogReadTask(
+            name=f"{card_name} Analog Input",
+            device=device_key,
+            sample_rate=sy.Rate.HZ * self.config.sample_rate,
+            stream_rate=sy.Rate.HZ * self.config.stream_rate,
+            data_saving=True,
+            channels=[],
+        )
+
+    def _create_digital_write_task(self, card_name: str, device_key: str) -> ni.DigitalWriteTask:
+        return ni.DigitalWriteTask(
+            name=f"{card_name} Digital Output",
+            device=device_key,
+            state_rate=sy.Rate.HZ * self.config.sample_rate,
+            data_saving=True,
+            channels=[],
+        )
+
+    def _create_digital_read_task(self, card_name: str, device_key: str) -> ni.DigitalReadTask:
+        return ni.DigitalReadTask(
+            name=f"{card_name} Digital Input",
+            device=device_key,
+            sample_rate=sy.Rate.HZ * self.config.sample_rate,
+            stream_rate=sy.Rate.HZ * self.config.stream_rate,
+            data_saving=True,
+            channels=[],
+        )
+
+    def configure_task(self, task: Optional[ni.Task], task_type: str) -> None:
+        """Configure a task if it has channels"""
+        if not task or not task.config.channels:
+            print(f"No channels added to {task_type} task.")
+            return
+
+        try:
+            print(f"Configuring {task_type} task...")
+            self.client.hardware.tasks.configure(task=task, timeout=5)
+            print(f"{task_type} task configured successfully.")
+        except Exception as e:
+            print(f"Failed to configure {task_type} task: {e}")
+
+    def process_device_data(self,
+                            device: sy.Device,
+                            wiring_config: Tuple[pd.ExcelFile, pd.ExcelFile],
+                            tasks: Tuple[ni.AnalogReadTask, ni.DigitalWriteTask, ni.DigitalReadTask]) -> None:
+        """Process all data for a device"""
+        data_wiring, control_wiring = wiring_config
+        analog_read_task, digital_write_task, digital_read_task = tasks
+
+        process_analog_input(data_wiring, analog_read_task, device,
+                             stream_rate=self.config.stream_rate,
+                             sample_rate=self.config.sample_rate)
+
+        process_digital_input(data_wiring, digital_read_task, device,
+                              stream_rate=self.config.stream_rate,
+                              sample_rate=self.config.sample_rate)
+
+        process_digital_output(control_wiring, digital_write_task, device,
+                               stream_rate=self.config.stream_rate,
+                               sample_rate=self.config.sample_rate)
 
 
 def main():
-    dev_5 = client.hardware.devices.retrieve(model="USB-6343", location="Dev5")
-    dev_6 = client.hardware.devices.retrieve(model="USB-6343", location="Dev6")
-
-
-    # Dev 5 Data
-    dev_5_data_wiring = input_excel(DEV_5_DATA_WIRING_FILEPATH)
-    dev_5_control_wiring = input_excel(DEV_5_CONTROL_WIRING_FILEPATH)
-
-    # Dev 6 Data
-    dev_6_data_wiring = input_excel(DEV_6_DATA_WIRING_FILEPATH)
-    dev_6_control_wiring = input_excel(DEV_6_CONTROL_WIRING_FILEPATH)
-
-
-
-    # Create tasks
-    dev_5_analog_read_task, dev_5_digital_write_task, dev_5_digital_read_task = create_tasks(dev_5)
-    dev_6_analog_read_task, dev_6_digital_write_task, dev_6_digital_read_task = create_tasks(dev_6)
-
-    # Process data
-    print("Processing data...")
-
-    process_analog_input(dev_5_data_wiring, dev_5_analog_read_task, dev_5, stream_rate=STREAM_RATE, sample_rate=SAMPLE_RATE)
-    process_analog_input(dev_6_data_wiring, dev_6_analog_read_task, dev_6, stream_rate=STREAM_RATE, sample_rate=SAMPLE_RATE)
-
-    process_digital_input(dev_5_data_wiring, dev_5_digital_read_task, dev_5, stream_rate=STREAM_RATE, sample_rate=SAMPLE_RATE)
-    process_digital_input(dev_6_data_wiring, dev_6_digital_read_task, dev_6, stream_rate=STREAM_RATE, sample_rate=SAMPLE_RATE)
-
-    process_digital_output(dev_5_control_wiring, dev_5_digital_write_task, dev_5, stream_rate=STREAM_RATE, sample_rate=SAMPLE_RATE)
-    process_digital_output(dev_6_control_wiring, dev_6_digital_write_task, dev_6, stream_rate=STREAM_RATE, sample_rate=SAMPLE_RATE)
-
-
-
-
-    if dev_5_digital_write_task.config.channels:
-        print("Attempting to configure digital write task...")
-        client.hardware.tasks.configure(task=dev_5_digital_write_task, timeout=5)
-        print("Digital write task configured.")
-    else:
-        print("No channels added to digital write task.")
-
-    if dev_6_digital_write_task.config.channels:
-        print("Attempting to configure digital write task...")
-        client.hardware.tasks.configure(task=dev_6_digital_write_task, timeout=5)
-        print("Digital write task configured.")
-    else:
-        print("No channels added to digital write task.")
-
-
-    if dev_5_analog_read_task.config.channels:
-        print("Attempting to configure analog read task...")
-        client.hardware.tasks.configure(task=dev_5_analog_read_task, timeout=5)
-        print("Dev 5 Analog read task configured.")
-    else:
-        print("No channels added to analog read task.")
-
-    if dev_6_analog_read_task.config.channels:
-        print("Attempting to configure analog read task...")
-        client.hardware.tasks.configure(task=dev_6_analog_read_task, timeout=5)
-        print("Dev 6 Analog read task configured.")
-    else:
-        print("No channels added to analog read task.")
-
-
-    if dev_5_digital_read_task.config.channels:
-        print("Attempting to configure digital read task...")
-        client.hardware.tasks.configure(task=dev_5_digital_read_task, timeout=5)
-        print("Digital read task configured.")
-    else:
-        print("No channels added to digital read task.")
-
-    if dev_6_digital_read_task.config.channels:
-        print("Attempting to configure digital read task...")
-        client.hardware.tasks.configure(task=dev_6_digital_read_task, timeout=5)
-        print("Digital read task configured.")
-    else:
-        print("No channels added to digital read task.")
-
-
-
-
-
-
-def create_tasks(card: sy.Device):
-
-    card_name = card.location
+    # Configuration
+    config = DAQConfig()
+    wiring_paths = {
+        "Dev5": DeviceWiringPaths(
+            data_wiring=Path("inputs/CMS_Data_Test_Dev5.xlsx"),
+            control_wiring=Path("inputs/CMS_Control_Test_Dev5.xlsx")
+        ),
+        "Dev6": DeviceWiringPaths(
+            data_wiring=Path("inputs/CMS_Data_Test_Dev6.xlsx"),
+            control_wiring=Path("inputs/CMS_Control_Test_Dev6.xlsx")
+        )
+    }
 
     try:
-        analog_read_task = client.hardware.tasks.retrieve(name=f"{card_name} Analog Input")
-    except:
-        analog_read_task = None
+        # Initialize DAQ system
+        daq_system = DAQSystem(config)
 
-    if analog_read_task is not None:
-        client.hardware.tasks.delete(analog_read_task.key)
+        # Process each device
+        for device_name, paths in wiring_paths.items():
+            print(f"\nProcessing {device_name}...")
 
-    print("Creating new analog read task...")
-    analog_read_task = ni.AnalogReadTask(
-        name=f"{card_name} Analog Input",
-        device=card.key,
-        sample_rate=sy.Rate.HZ * SAMPLE_RATE,
-        stream_rate=sy.Rate.HZ * STREAM_RATE,
-        data_saving=True,
-        channels=[],
-    )
+            # Get device and configurations
+            device = daq_system.get_device(device_name)
+            wiring_config = daq_system.read_wiring_config(paths)
 
+            # Create and configure tasks
+            tasks = daq_system.create_device_tasks(device)
 
-    try:
-        digital_write_task = client.hardware.tasks.retrieve(name=f"{card_name} Digital Output")
-    except:
-        digital_write_task = None
-    if digital_write_task is not None:
-        client.hardware.tasks.delete(digital_write_task.key)
+            # Process data
+            daq_system.process_device_data(device, wiring_config, tasks)
 
+            # Configure all tasks
+            for task, task_type in zip(tasks, ["Analog Read", "Digital Write", "Digital Read"]):
+                daq_system.configure_task(task, task_type)
 
-    print("Creating new digital write task...")
-    digital_write_task = ni.DigitalWriteTask(
-        name=f"{card_name} Digital Output",
-        device=card.key,
-        state_rate=sy.Rate.HZ * SAMPLE_RATE,
-        data_saving=True,
-        channels=[],
-    )
-
-    try:
-        digital_read_task = client.hardware.tasks.retrieve(name=f"{card_name} Digital Input")
-    except:
-        digital_read_task = None
-    if digital_read_task is not None:
-        client.hardware.tasks.delete(digital_read_task.key)
-
-    print("Creating new digital read task...")
-    digital_read_task = ni.DigitalReadTask(
-        name=f"{card_name} Digital Input",
-        device=card.key,
-        sample_rate=sy.Rate.HZ * SAMPLE_RATE,
-        stream_rate=sy.Rate.HZ * STREAM_RATE,
-        data_saving=True,
-        channels=[],
-    )
-
-
-    return analog_read_task, digital_write_task, digital_read_task
-
-
-def input_excel(file_path: str):
-    """
-    Reads all sheets from an Excel file into a dictionary of DataFrames.
-    Transposes the 'Header' sheet.
-
-    Parameters:
-
-
-    """
-
-
-    try:
-        excel_file = pd.ExcelFile(file_path)
-    except FileNotFoundError as e:
-        print("File not found:", e)
-        return
-    except ValueError as e:
-        print("Invalid EXCEL file or format:", e)
-        return
     except Exception as e:
-        print("Check sheet read in:", e)
-        return
-
-    print("EXCEL file succesfully read.")
-
-
-
-    return excel_file
-
+        print(f"Error in DAQ setup: {e}")
+        raise
 
 
 if __name__ == "__main__":
