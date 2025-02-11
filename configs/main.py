@@ -8,6 +8,8 @@ from synnax.hardware import ni
 from configs.processing import process_analog_input, process_digital_input, process_digital_output
 
 
+# TODO: refactor processing.py and add files as needed
+
 @dataclass
 class DAQConfig:
     """Configuration settings for DAQ system"""
