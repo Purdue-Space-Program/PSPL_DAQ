@@ -29,14 +29,9 @@ git clone https://github.com/yourusername/daq-system.git
 cd daq-system
 ```
 
-2. Install in development mode:
+2. Run the program:
 ```bash
-pip install -e .
-```
-
-### Installing from PyPI
-```bash
-pip install daq-system
+python3 main.py
 ```
 
 ## Project Structure
