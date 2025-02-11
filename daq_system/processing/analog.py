@@ -16,13 +16,13 @@ def process_analog_input(
 
     for _, row in sensors.iterrows():
         # Create timestamp channel
-        bcls_time = channel_factory.create_timestamp_channel("BCLS_time")
+        bcls_ai_time = channel_factory.create_timestamp_channel("BCLS_ai_time")
 
         # Create sensor channel
         sensor_channel = channel_factory.create_data_channel(
             name=row["Name"],
             data_type=sy.DataType.FLOAT32,
-            index_key=bcls_time.key,
+            index_key=bcls_ai_time.key,
             rate=sy.Rate.HZ * stream_rate,
         )
 
