@@ -4,11 +4,13 @@ from synnax.hardware import ni
 from .channel_factory import ChannelFactory
 
 
-def process_analog_input(data: pd.ExcelFile,
-                         analog_read_task: ni.AnalogReadTask,
-                         device: sy.Device,
-                         channel_factory: ChannelFactory,
-                         stream_rate: int):
+def process_analog_input(
+    data: pd.ExcelFile,
+    analog_read_task: ni.AnalogReadTask,
+    device: sy.Device,
+    channel_factory: ChannelFactory,
+    stream_rate: int,
+):
     """Process analog input configuration"""
     sensors = data.parse("AI_slope-offset")
 
@@ -22,11 +24,10 @@ def process_analog_input(data: pd.ExcelFile,
             data_type=sy.DataType.FLOAT32,
             index_key=bcls_ai_time.key,
             rate=sy.Rate.HZ * stream_rate,
-            units=row["Engineering Units"]
         )
 
         # Extract channel number
-        channel_num = int(row["Channel"].split('/')[-1][2:])
+        channel_num = int(row["Channel"].split("/")[-1][2:])
 
         # Create AI voltage channel
         ai_chan = ni.AIVoltageChan(
