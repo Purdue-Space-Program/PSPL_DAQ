@@ -16,13 +16,13 @@ def process_digital_input(
 
     for _, row in sensors.iterrows():
         # Create timestamp channel
-        bcls_time = channel_factory.create_timestamp_channel("BCLS_time")
+        bcls_di_time = channel_factory.create_timestamp_channel("BCLS_di_time")
 
         # Create sensor channel - note: no units for digital channels
         sensor_channel = channel_factory.create_data_channel(
             name=row["Name"],
             data_type=sy.DataType.UINT8,
-            index_key=bcls_time.key,
+            index_key=bcls_di_time.key,
             rate=sy.Rate.HZ * stream_rate,
         )
 
@@ -51,8 +51,8 @@ def process_digital_output(
 
     for _, row in sensors.iterrows():
         # Create timestamp channels
-        bcls_time = channel_factory.create_timestamp_channel("BCLS_time")
-        # bcls_cmd_time = channel_factory.create_timestamp_channel("BCLS_cmd_time")
+        bcls_state_time = channel_factory.create_timestamp_channel("BCLS_state_time")
+        bcls_cmd_time = channel_factory.create_timestamp_channel("BCLS_cmd_time")
 
         # Extract line number
         line = int(row["Channel"].split("/")[-1][4:])
@@ -61,14 +61,14 @@ def process_digital_output(
         state_chan = channel_factory.create_data_channel(
             name=f"{row['Name']}_state",
             data_type=sy.DataType.UINT8,
-            index_key=bcls_time.key,
+            index_key=bcls_state_time.key,
             rate=sy.Rate.HZ * sample_rate,
         )
 
         cmd_chan = channel_factory.create_data_channel(
             name=f"{row['Name']}_cmd",
             data_type=sy.DataType.UINT8,
-            index_key=bcls_time.key,
+            index_key=bcls_cmd_time.key,
             rate=sy.Rate.HZ * sample_rate,
         )
 
