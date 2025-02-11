@@ -17,12 +17,9 @@ class ChannelFactory:
             retrieve_if_name_exists=True,
         )
 
-    def create_data_channel(self,
-                            name: str,
-                            data_type: sy.DataType,
-                            index_key: str,
-                            rate: int,
-                            units: Optional[str] = None) -> sy.Channel:
+    def create_data_channel(
+        self, name: str, data_type: sy.DataType, index_key: str, rate: int
+    ) -> sy.Channel:
         """Create a data channel"""
         # Base channel configuration
         channel_config = {
@@ -30,11 +27,7 @@ class ChannelFactory:
             "data_type": data_type,
             "retrieve_if_name_exists": True,
             "index": index_key,
-            "rate": rate
+            "rate": rate,
         }
-
-        # Add units only if specified (for analog channels)
-        if units is not None:
-            channel_config["units"] = units
 
         return self.client.channels.create(**channel_config)

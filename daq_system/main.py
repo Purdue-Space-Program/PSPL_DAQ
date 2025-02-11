@@ -1,8 +1,8 @@
+import pandas as pd
+
 from daq_system.config.settings import DAQConfig, DEFAULT_DEVICE_PATHS
 from daq_system.core.daq_system import DAQSystem
 from daq_system.utils.exceptions import DAQError
-
-import pandas as pd
 
 
 def main():
@@ -17,8 +17,7 @@ def main():
 
             # Get device
             device = daq_system.client.hardware.devices.retrieve(
-                model="USB-6343",
-                location=device_name
+                model="USB-6343", location=device_name
             )
 
             # Read configuration files
@@ -32,7 +31,9 @@ def main():
             daq_system.process_device_data(device, data_wiring, control_wiring, tasks)
 
             # Configure all tasks
-            for task, task_type in zip(tasks, ["Analog Read", "Digital Write", "Digital Read"]):
+            for task, task_type in zip(
+                tasks, ["Analog Read", "Digital Write", "Digital Read"]
+            ):
                 daq_system.configure_task(task, task_type)
 
     except DAQError as e:

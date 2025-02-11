@@ -1,18 +1,19 @@
 """
 Utility functions and classes for the DAQ system.
 """
+
 from .exceptions import (
     DAQError,
     ConnectionError,
     ConfigurationError,
     DeviceError,
-    TaskError
+    TaskError,
 )
 
 __all__ = [
-    'DAQError',
-    'ConnectionError',
-    'ConfigurationError',
-    'DeviceError',
-    'TaskError'
+    "DAQError",
+    "ConnectionError",
+    "ConfigurationError",
+    "DeviceError",
+    "TaskError",
 ]
