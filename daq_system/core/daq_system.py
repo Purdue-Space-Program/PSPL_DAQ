@@ -105,9 +105,9 @@ class DAQSystem:
 
         # Define task configurations
         task_configs = [
-            ("Analog Input", self._create_analog_read_task),
-            ("Digital Output", self._create_digital_write_task),
-            ("Digital Input", self._create_digital_read_task),
+            ("AI", self._create_analog_read_task),
+            ("DO", self._create_digital_write_task),
+            ("DI", self._create_digital_read_task),
         ]
 
         # Create each task, deleting existing ones first
