@@ -25,8 +25,8 @@ A robust Data Acquisition System built with Synnax for managing NI USB-6343 devi
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/daq-system.git
-cd daq-system
+git clone https://github.com/Purdue-Space-Program/PSPL_DAQ.git
+cd PSPL_DAQ/daq-system
 ```
 
 2. Run the program:
