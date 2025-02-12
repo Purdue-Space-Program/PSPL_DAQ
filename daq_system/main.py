@@ -5,6 +5,8 @@ from daq_system.core.daq_system import DAQSystem
 from daq_system.utils.exceptions import DAQError
 
 
+# TODO: Bug fix. Dev6 AI tasks does not stop correctly after it is started.
+
 def main():
     try:
         # Initialize DAQ system
