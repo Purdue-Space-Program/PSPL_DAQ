@@ -4,7 +4,6 @@ from daq_system.config.settings import DAQConfig, DEFAULT_DEVICE_PATHS
 from daq_system.core.daq_system import DAQSystem
 from daq_system.utils.exceptions import DAQError
 
-# TODO: Make different cards have different time channels
 # TODO: Make function to delete all channels and all tasks
 
 
