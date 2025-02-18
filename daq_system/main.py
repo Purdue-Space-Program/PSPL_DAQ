@@ -6,7 +6,6 @@ from daq_system.utils.exceptions import DAQError
 
 # TODO: Make function to delete all channels and all tasks
 
-
 def main():
     try:
         # Initialize DAQ system

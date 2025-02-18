@@ -26,7 +26,7 @@ with client.control.acquire(
 
     controller["IGNITER_cmd"] = True # Turn on the igniter
 
-    controller.wait_until(lambda c: c["TC"] > 100) # Wait until the TC reads above 100
+    # controller.wait_until(lambda c: c["TC"] > 100) # Wait until the TC reads above 100
     controller["ACTUATOR_cmd"] = True
 
     time.sleep(5)
