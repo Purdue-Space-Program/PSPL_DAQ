@@ -26,11 +26,11 @@ class DeviceWiringPaths:
 # Default device configurations
 DEFAULT_DEVICE_PATHS: Dict[str, DeviceWiringPaths] = {
     "Dev5": DeviceWiringPaths(
-        data_wiring=Path("inputs/CMS_Data_Test_Dev5.xlsx"),
-        control_wiring=Path("inputs/CMS_Control_Test_Dev5.xlsx"),
+        data_wiring=Path("daq_system/inputs/CMS_Data_Test_Dev5.xlsx"),
+        control_wiring=Path("daq_system/inputs/CMS_Control_Test_Dev5.xlsx"),
     ),
     "Dev6": DeviceWiringPaths(
-        data_wiring=Path("inputs/CMS_Data_Test_Dev6.xlsx"),
-        control_wiring=Path("inputs/CMS_Control_Test_Dev6.xlsx"),
+        data_wiring=Path("daq_system/inputs/CMS_Data_Test_Dev6.xlsx"),
+        control_wiring=Path("daq_system/inputs/CMS_Control_Test_Dev6.xlsx"),
     ),
 }
