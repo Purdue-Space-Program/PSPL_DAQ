@@ -1,11 +1,13 @@
-import pandas as pd
+import pandas as pd  # type: ignore
 
 from daq_system.config.settings import DAQConfig, DEFAULT_DEVICE_PATHS
 from daq_system.core.daq_system import DAQSystem
 from daq_system.utils.exceptions import DAQError
 
-
 # TODO: Bug fix. Dev6 AI tasks does not stop correctly after it is started.
+# TODO: Bug fix. BCLS_state_time does not want to delete. Needs EMU_PWR to be deleted first.
+# TODO: Bug fix (Top Priority) Default state for valves and solenoids is on.
+
 
 def main():
     try:
