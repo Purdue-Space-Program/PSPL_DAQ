@@ -23,7 +23,6 @@ def main():
             device = daq_system.client.hardware.devices.retrieve(
                 model="USB-6343", location=device_name
             )
-
             # Read configuration files
             data_wiring = pd.ExcelFile(paths.data_wiring)
             control_wiring = pd.ExcelFile(paths.control_wiring)
