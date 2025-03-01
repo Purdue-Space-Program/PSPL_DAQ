@@ -92,60 +92,9 @@ class DAQSystem:
             channels=[],
         )
 
-    def create_device_tasks(
-        self, device: sy.Device
-    ) -> Tuple[ni.AnalogReadTask, ni.DigitalWriteTask, ni.DigitalReadTask]:
-        """
-        Create all tasks for a device, deleting any existing tasks with the same names.
-
-        Args:
-            device: Synnax device object
-
-        Returns:
-            Tuple of (AnalogReadTask, DigitalWriteTask, DigitalReadTask)
-        """
-        card_name = device.location
-        tasks: List[ni.Task] = []
-
-        # Define task configurations
-        task_configs = [
-            ("AI", self._create_analog_read_task),
-            ("DO", self._create_digital_write_task),
-            ("DI", self._create_digital_read_task),
-        ]
-
-        # Create each task, deleting existing ones first
-        for suffix, creator_func in task_configs:
-            task_name = f"{card_name} {suffix}"
-            logger.info(f"Setting up task: {task_name}")
-
-            # Delete existing task if it exists
-            self._delete_existing_task(task_name)
-
-            # Create new task
-            try:
-                task = creator_func(card_name, device.key)
-                tasks.append(task)
-                logger.info(f"Successfully created task: {task_name}")
-            except Exception as e:
-                raise TaskError(f"Failed to create task {task_name}: {e}")
-
-        return tuple(tasks)
-
-    def configure_task(self, task: Optional[ni.Task], task_type: str) -> None:
-        """Configure a task if it has channels"""
-        if not task or not task.config.channels:
-            logger.info(f"No channels added to {task_type} task.")
-            return
-
-        try:
-            logger.info(f"Configuring {task_type} task...")
-            self.client.hardware.tasks.configure(task=task, timeout=5)
-            logger.info(f"Successfully configured {task_type} task.")
-        except Exception as e:
-            raise TaskError(f"Failed to configure {task_type} task: {e}")
-
-    def start_task(self, digital_write_task: ni.DigitalWriteTask) -> None:
+    def _start_digital_write_task(
+        self, digital_write_task: ni.DigitalWriteTask
+    ) -> None:
         """
         Start a digital output task and set all channel states to zero
 
@@ -191,6 +140,69 @@ class DAQSystem:
             )
         except Exception as e:
             raise TaskError(f"Failed to start digital output task: {e}")
+
+    def create_device_tasks(
+        self, device: sy.Device
+    ) -> Tuple[ni.AnalogReadTask, ni.DigitalWriteTask, ni.DigitalReadTask]:
+        """
+        Create all tasks for a device, deleting any existing tasks with the same names,
+        and start the digital write task.
+
+        Args:
+            device: Synnax device object
+
+        Returns:
+            Tuple of (AnalogReadTask, DigitalWriteTask, DigitalReadTask)
+        """
+        card_name = device.location
+        tasks: List[ni.Task] = []
+
+        # Define task configurations
+        task_configs = [
+            ("AI", self._create_analog_read_task),
+            ("DO", self._create_digital_write_task),
+            ("DI", self._create_digital_read_task),
+        ]
+
+        # Create each task, deleting existing ones first
+        for suffix, creator_func in task_configs:
+            task_name = f"{card_name} {suffix}"
+            logger.info(f"Setting up task: {task_name}")
+
+            # Delete existing task if it exists
+            self._delete_existing_task(task_name)
+
+            # Create new task
+            try:
+                task = creator_func(card_name, device.key)
+                tasks.append(task)
+                logger.info(f"Successfully created task: {task_name}")
+            except Exception as e:
+                raise TaskError(f"Failed to create task {task_name}: {e}")
+
+        # Configure all tasks
+        analog_read_task, digital_write_task, digital_read_task = tasks
+        self.configure_task(analog_read_task, "analog input")
+        self.configure_task(digital_write_task, "digital output")
+        self.configure_task(digital_read_task, "digital input")
+
+        # Start the digital write task to initialize all outputs to deenergized state
+        self._start_digital_write_task(digital_write_task)
+
+        return (analog_read_task, digital_write_task, digital_read_task)
+
+    def configure_task(self, task: Optional[ni.Task], task_type: str) -> None:
+        """Configure a task if it has channels"""
+        if not task or not task.config.channels:
+            logger.info(f"No channels added to {task_type} task.")
+            return
+
+        try:
+            logger.info(f"Configuring {task_type} task...")
+            self.client.hardware.tasks.configure(task=task, timeout=5)
+            logger.info(f"Successfully configured {task_type} task.")
+        except Exception as e:
+            raise TaskError(f"Failed to configure {task_type} task: {e}")
 
     def process_device_data(
         self,
