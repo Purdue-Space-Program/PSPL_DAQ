@@ -18,6 +18,7 @@ A robust Data Acquisition System built with Synnax for managing NI USB-6343 devi
 ### Prerequisites
 
 - Python 3.8+
+- [uv](https://docs.astral.sh/uv/getting-started/installation/)
 - National Instruments DAQmx drivers
 - Synnax server running and accessible
 
@@ -27,11 +28,12 @@ A robust Data Acquisition System built with Synnax for managing NI USB-6343 devi
 ```bash
 git clone https://github.com/Purdue-Space-Program/PSPL_DAQ.git
 cd PSPL_DAQ/daq-system
+uv sync
 ```
 
 2. Run the program:
 ```bash
-python3 main.py
+uv run main.py
 ```
 
 ## Project Structure
