@@ -28,16 +28,27 @@ def main():
             control_wiring = pd.ExcelFile(paths.control_wiring)
 
             # Create and configure tasks
-            tasks = daq_system.create_device_tasks(device)
+            analog_read_task, digital_write_task, digital_read_task = (
+                daq_system.create_device_tasks(device)
+            )
 
             # Process data
-            daq_system.process_device_data(device, data_wiring, control_wiring, tasks)
+            daq_system.process_device_data(
+                device,
+                data_wiring,
+                control_wiring,
+                (analog_read_task, digital_write_task, digital_read_task),
+            )
 
-            # Configure all tasks
-            for task, task_type in zip(
-                tasks, ["Analog Read", "Digital Write", "Digital Read"]
-            ):
-                daq_system.configure_task(task, task_type)
+            daq_system.configure_task(analog_read_task, "Analog Read")
+            daq_system.configure_task(digital_write_task, "Digital Write")
+            daq_system.configure_task(digital_read_task, "Digital Read")
+
+            # Could I set this up to run this if in daq_system.py instead
+
+            if digital_write_task and digital_write_task.config.channels:
+                # Start digital write task
+                daq_system.start_task(digital_write_task)
 
     except DAQError as e:
         print(f"DAQ Error: {e}")

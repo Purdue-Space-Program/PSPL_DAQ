@@ -141,6 +141,54 @@ class DAQSystem:
         except Exception as e:
             raise TaskError(f"Failed to configure {task_type} task: {e}")
 
+    def start_task(self, digital_write_task: ni.DigitalWriteTask) -> None:
+        """
+        Start a digital output task and set all channel states to zero
+
+        Args:
+            digital_write_task: The digital write task to start
+        """
+        if not digital_write_task or not digital_write_task.config.channels:
+            logger.info("No digital output task or channels to start.")
+            return
+
+        try:
+            logger.info(f"Starting digital output task: {digital_write_task.name}")
+
+            # Start the task
+            digital_write_task.start()
+
+            # Get all command channel keys from the task
+            cmd_channels = [
+                chan.cmd_channel for chan in digital_write_task.config.channels
+            ]
+
+            # Get corresponding state channel keys for reading
+            state_channels = [
+                chan.state_channel
+                for chan in digital_write_task.config.channels
+                if hasattr(chan, "state_channel") and chan.state_channel
+            ]
+
+            # Set all digital outputs to zero using control system
+            with self.client.control.acquire(
+                name=f"Initialize {digital_write_task.name}",
+                write=cmd_channels,
+                read=(
+                    state_channels if state_channels else cmd_channels
+                ),  # Use state channels if available, otherwise use cmd channels
+                write_authorities=50,
+            ) as ctrl:
+                # Set all channels to zero
+                for channel_key in cmd_channels:
+                    ctrl[channel_key] = 1
+                    logger.info(f"Set {channel_key} to off")
+            logger.info(
+                f"Successfully started digital output task: {digital_write_task.name}"
+            )
+        except Exception as e:
+            raise TaskError(f"Failed to start digital output task: {e}")
+
     def process_device_data(
         self,
         device: sy.Device,
