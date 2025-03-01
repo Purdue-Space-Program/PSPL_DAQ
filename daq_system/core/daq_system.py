@@ -10,6 +10,10 @@ from ..processing.channel_factory import ChannelFactory
 from ..processing.analog import process_analog_input
 from ..processing.digital import process_digital_input, process_digital_output
 
+# DEFINE STATES
+ENERGIZED = 0
+DEENERGIZED = 1
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -181,8 +185,7 @@ class DAQSystem:
             ) as ctrl:
                 # Set all channels to zero
                 for channel_key in cmd_channels:
-                    ctrl[channel_key] = 1
-                    logger.info(f"Set {channel_key} to off")
+                    ctrl[channel_key] = DEENERGIZED
             logger.info(
                 f"Successfully started digital output task: {digital_write_task.name}"
             )
