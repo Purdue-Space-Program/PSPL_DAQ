@@ -23,7 +23,6 @@ def process_analog_input(
             name=row["Name"],
             data_type=sy.DataType.FLOAT32,
             index_key=bcls_ai_time.key,
-            rate=sy.Rate.HZ * stream_rate,
         )
 
         # Extract channel number

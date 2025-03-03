@@ -74,7 +74,7 @@ class DAQSystem:
         return ni.DigitalWriteTask(
             name=f"{card_name} DO",
             device=device_key,
-            state_rate=sy.Rate.HZ * 100,
+            state_rate=sy.Rate.HZ * self.config.sample_rate,
             data_saving=True,
             channels=[],
         )
@@ -273,7 +273,7 @@ class DAQSystem:
         self.configure_task(digital_read_task, "Digital Read")
 
         # Step 4: Start the digital output task to set all outputs to deenergized state
-        self.start_digital_output_task(digital_write_task)
+        # self.start_digital_output_task(digital_write_task)
 
         logger.info(f"Device setup complete: {device.location}")
 
