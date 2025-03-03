@@ -74,7 +74,7 @@ class DAQSystem:
         return ni.DigitalWriteTask(
             name=f"{card_name} DO",
             device=device_key,
-            state_rate=sy.Rate.HZ * self.config.sample_rate,
+            state_rate=sy.Rate.HZ * 100,
             data_saving=True,
             channels=[],
         )
