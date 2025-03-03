@@ -2,21 +2,18 @@ import time
 import synnax as sy
 
 client = sy.Synnax(
-    host = "128.46.118.59",
-    port = 9090,
-    username = "Bill",
-    password = "Bill",
+    host="128.46.118.59",
+    port=9090,
+    username="Bill",
+    password="Bill",
 )
 
 
 with client.control.acquire(
-
     name="Test",
     read=["REED-N2-02", "SV-N2-02_state"],
     write=["SV-N2-02_cmd"],
-
 ) as controller:
-
 
     start = sy.TimeStamp.now()
 
@@ -32,7 +29,3 @@ with client.control.acquire(
         name=f"Test {end}",
         time_range=sy.TimeRange(start=start, end=end),
     )
-
-
-
-
