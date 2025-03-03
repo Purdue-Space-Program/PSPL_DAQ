@@ -53,8 +53,12 @@ def process_digital_output(
     for _, row in sensors.iterrows():
         # Create timestamp channels
         name = row["Name"]
-        bcls_state_time = channel_factory.create_timestamp_channel(f"BCLS_state_time_{name}")
-        bcls_cmd_time = channel_factory.create_timestamp_channel(f"BCLS_cmd_time_{name}")
+        bcls_state_time = channel_factory.create_timestamp_channel(
+            f"BCLS_state_time_{name}"
+        )
+        bcls_cmd_time = channel_factory.create_timestamp_channel(
+            f"BCLS_cmd_time_{name}"
+        )
 
         # Extract line number
         line = int(row["Channel"].split("/")[-1][4:])
