@@ -31,3 +31,17 @@ class ChannelFactory:
         }
 
         return self.client.channels.create(**channel_config)
+
+    def create_virtual_channel(
+        self, name: str, data_type: sy.DataType, rate: int
+    ) -> sy.Channel:
+        """Create a virtual channel"""
+        # Base channel configuration
+        channel_config = {
+            "name": name,
+            "data_type": data_type,
+            "retrieve_if_name_exists": True,
+            "virtual": True,
+        }
+
+        return self.client.channels.create(**channel_config)

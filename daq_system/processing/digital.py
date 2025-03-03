@@ -66,10 +66,6 @@ def process_digital_output(
 
         name = row["Name"]
 
-        bcls_state_time = channel_factory.create_timestamp_channel(
-            f"BCLS_state_time_{name}"
-        )
-
         bcls_cmd_time = channel_factory.create_timestamp_channel(
             f"BCLS_cmd_time_{name}"
         )
@@ -81,17 +77,16 @@ def process_digital_output(
         # Create state and command channels - note: no units for digital channels
 
         state_chan = channel_factory.create_data_channel(
-            name=f"{row['Name']}_state",
-            data_type=sy.DataType.UINT8,
-            index_key=bcls_state_time.key,
-            rate=sy.Rate.HZ * STATE_RATE,
-        )
-
-        cmd_chan = channel_factory.create_data_channel(
-            name=f"{row['Name']}_cmd",
+            name=row["Name"],
             data_type=sy.DataType.UINT8,
             index_key=bcls_cmd_time.key,
             rate=sy.Rate.HZ * STATE_RATE,
+        )
+
+        cmd_chan = channel_factory.create_virtual_channel(
+            name=f"{row['Name']}_cmd",
+            data_type=sy.DataType.UINT8,
+            rate=sy.Rate.HZ * sample_rate,
         )
 
         # Create DO channel
