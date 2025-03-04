@@ -30,7 +30,6 @@ def process_digital_input(
             name=row["Name"],
             data_type=sy.DataType.UINT8,
             index_key=bcls_di_time.key,
-            rate=sy.Rate.HZ * STATE_RATE,
         )
 
         # Extract channel number
