@@ -255,7 +255,6 @@ class DAQSystem:
             digital_read_task,
             device,
             self.channel_factory,
-            self.config.stream_rate,
         )
 
         process_digital_output(
@@ -273,7 +272,7 @@ class DAQSystem:
         self.configure_task(digital_read_task, "Digital Read")
 
         # Step 4: Start the digital output task to set all outputs to deenergized state
-        # self.start_digital_output_task(digital_write_task)
+        self.start_digital_output_task(digital_write_task)
 
         logger.info(f"Device setup complete: {device.location}")
 
