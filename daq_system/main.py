@@ -1,5 +1,4 @@
 import pandas as pd  # type: ignore
-
 from daq_system.config.settings import DAQConfig, DEFAULT_DEVICE_PATHS
 from daq_system.core.daq_system import DAQSystem
 from daq_system.utils.exceptions import DAQError
@@ -7,6 +6,7 @@ from daq_system.utils.exceptions import DAQError
 # TODO: Bug fix. Dev6 AI tasks does not stop correctly after it is started.
 # TODO: Bug fix. BCLS_state_time does not want to delete. Needs EMU_PWR to be deleted first.
 # TODO: Bug fix (Top Priority) Default state for valves and solenoids is on.
+# TODO: Make function to delete all channels and all tasks
 
 
 def main():
@@ -23,32 +23,13 @@ def main():
             device = daq_system.client.hardware.devices.retrieve(
                 model="USB-6343", location=device_name
             )
+
             # Read configuration files
             data_wiring = pd.ExcelFile(paths.data_wiring)
             control_wiring = pd.ExcelFile(paths.control_wiring)
 
-            # Create and configure tasks
-            analog_read_task, digital_write_task, digital_read_task = (
-                daq_system.create_device_tasks(device)
-            )
-
-            # Process data
-            daq_system.process_device_data(
-                device,
-                data_wiring,
-                control_wiring,
-                (analog_read_task, digital_write_task, digital_read_task),
-            )
-
-            daq_system.configure_task(analog_read_task, "Analog Read")
-            daq_system.configure_task(digital_write_task, "Digital Write")
-            daq_system.configure_task(digital_read_task, "Digital Read")
-
-            # Could I set this up to run this if in daq_system.py instead
-
-            if digital_write_task and digital_write_task.config.channels:
-                # Start digital write task
-                daq_system.start_task(digital_write_task)
+            # Use the new setup_device method which handles everything
+            daq_system.setup_device(device, data_wiring, control_wiring)
 
     except DAQError as e:
         print(f"DAQ Error: {e}")
