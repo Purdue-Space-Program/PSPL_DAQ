@@ -80,47 +80,50 @@ def run_tc_sequence():
             # log_event(
             #     f"Waiting up to {IGNITION_WAIT_TIME} seconds for TC > {TC_THRESHOLD}"
             # )
-
-            # Using controller.wait_until with a timeout for precise timing
-            tc_threshold_reached = controller.wait_until(
-                lambda c: c["TC"] > TC_THRESHOLD,
-                timeout=IGNITION_WAIT_TIME * sy.TimeSpan.SECOND,
-            )
-
-            # Check if temperature threshold was reached
-            if tc_threshold_reached:
-                # log_event(f"TC threshold reached: {controller['TC']}")
-
-                # Activate actuator ONLY if temperature threshold was reached
-                controller["ACTUATOR_cmd"] = ENERGIZE
-                # log_event("Actuator activated")
-
-                # Run actuator for specified time
-                controller.sleep(ACTUATOR_RUN_TIME)
-
-                # Deactivate systems in reverse order
-                controller["ACTUATOR_cmd"] = DEENERGIZE
-                # log_event("Actuator deactivated")
-
-                controller["IGNITOR_cmd"] = DEENERGIZE
-                # log_event("Igniter deactivated")
-
-                sequence_status = "SUCCESS"
-                log_event("Sequence completed successfully")
-            else:
-                controller["IGNITOR_cmd"] = DEENERGIZE
-                # Abort sequence if TC didn't reach threshold
-
-                # Send abort command
-                # response = send_tcp_command(ABORT_COMMAND)
-                # log_event(f"Sent abort command, received: {response}")
-
-                log_event(
-                    f"ABORTING: TC only reached {controller['TC']}, below threshold of {TC_THRESHOLD}"
+                
+            if controller.wait_until_defined("TC"):
+                # Using controller.wait_until with a timeout for precise timing
+                tc_threshold_reached = controller.wait_until(
+                    lambda c: c["TC"] > TC_THRESHOLD,
+                    timeout=IGNITION_WAIT_TIME * sy.TimeSpan.SECOND,
                 )
 
-                # Deactivate igniter without ever activating actuator
-                log_event("Ignitor deactivated")
+                # Check if temperature threshold was reached
+                if tc_threshold_reached:
+                    # log_event(f"TC threshold reached: {controller['TC']}")
+
+                    # Activate actuator ONLY if temperature threshold was reached
+                    controller["ACTUATOR_cmd"] = ENERGIZE
+                    # log_event("Actuator activated")
+
+                    # Run actuator for specified time
+                    controller.sleep(ACTUATOR_RUN_TIME)
+
+                    # Deactivate systems in reverse order
+                    controller["ACTUATOR_cmd"] = DEENERGIZE
+                    # log_event("Actuator deactivated")
+
+                    controller["IGNITOR_cmd"] = DEENERGIZE
+                    # log_event("Igniter deactivated")
+
+                    sequence_status = "SUCCESS"
+                    log_event("Sequence completed successfully")
+                else:
+                    controller["IGNITOR_cmd"] = DEENERGIZE
+                    # Abort sequence if TC didn't reach threshold
+
+                    # Send abort command
+                    # response = send_tcp_command(ABORT_COMMAND)
+                    # log_event(f"Sent abort command, received: {response}")
+
+                    log_event(
+                        f"ABORTING: TC only reached {controller['TC']}, below threshold of {TC_THRESHOLD}"
+                    )
+
+                    # Deactivate igniter without ever activating actuator
+                    log_event("Ignitor deactivated")
+            else:
+                log_event("this shit do not work!")
 
         except Exception as e:
             # Safety shutdown
