@@ -41,7 +41,7 @@ ABORT_COMMAND = 15
 
 # Sequence parameters
 TC_THRESHOLD = 100  # Temperature threshold
-IGNITION_WAIT_TIME = 2.3  # Seconds to wait between igniter and actuator
+IGNITION_WAIT_TIME = 10  # Seconds to wait between igniter and actuator
 ACTUATOR_RUN_TIME = 5.0  # Seconds to run actuator
 
 

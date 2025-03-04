@@ -140,7 +140,7 @@ class DAQSystem:
 
         try:
             logger.info(f"Configuring {task_type} task...")
-            self.client.hardware.tasks.configure(task=task, timeout=5)
+            self.client.hardware.tasks.configure(task=task, timeout=10)
             logger.info(f"Successfully configured {task_type} task.")
         except Exception as e:
             raise TaskError(f"Failed to configure {task_type} task: {e}")
