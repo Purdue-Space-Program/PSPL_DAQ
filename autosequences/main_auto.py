@@ -69,17 +69,17 @@ def run_tc_sequence():
 
         try:
             # Send start command
-            response = send_tcp_command(START_COMMAND)
-            log_event(f"Sent start command, received: {response}")
+            # response = send_tcp_command(START_COMMAND)
+            # log_event(f"Sent start command, received: {response}")
 
             # Activate igniter
             controller["IGNITER_cmd"] = ENERGIZE
-            log_event("Igniter activated")
+            # log_event("Igniter activated")
 
             # Wait for TC to exceed threshold while respecting timeout
-            log_event(
-                f"Waiting up to {IGNITION_WAIT_TIME} seconds for TC > {TC_THRESHOLD}"
-            )
+            # log_event(
+            #     f"Waiting up to {IGNITION_WAIT_TIME} seconds for TC > {TC_THRESHOLD}"
+            # )
 
             # Using controller.wait_until with a timeout for precise timing
             tc_threshold_reached = controller.wait_until(
@@ -90,45 +90,47 @@ def run_tc_sequence():
 
             # Check if temperature threshold was reached
             if tc_threshold_reached:
-                log_event(f"TC threshold reached: {controller['TC']}")
+                # log_event(f"TC threshold reached: {controller['TC']}")
 
                 # Activate actuator ONLY if temperature threshold was reached
                 controller["ACTUATOR_cmd"] = ENERGIZE
-                log_event("Actuator activated")
+                # log_event("Actuator activated")
 
                 # Run actuator for specified time
-                time.sleep(ACTUATOR_RUN_TIME)
+                controller.sleep(ACTUATOR_RUN_TIME)
 
                 # Deactivate systems in reverse order
                 controller["ACTUATOR_cmd"] = DEENERGIZE
-                log_event("Actuator deactivated")
+                # log_event("Actuator deactivated")
 
                 controller["IGNITER_cmd"] = DEENERGIZE
-                log_event("Igniter deactivated")
+                # log_event("Igniter deactivated")
 
                 sequence_status = "SUCCESS"
                 log_event("Sequence completed successfully")
             else:
+                controller["IGNITER_cmd"] = DEENERGIZE
                 # Abort sequence if TC didn't reach threshold
+
+                # Send abort command
+                # response = send_tcp_command(ABORT_COMMAND)
+                # log_event(f"Sent abort command, received: {response}")
+
                 log_event(
                     f"ABORTING: TC only reached {controller['TC']}, below threshold of {TC_THRESHOLD}"
                 )
 
                 # Deactivate igniter without ever activating actuator
-                controller["IGNITER_cmd"] = DEENERGIZE
                 log_event("Igniter deactivated")
 
-                # Send abort command
-                response = send_tcp_command(ABORT_COMMAND)
-                log_event(f"Sent abort command, received: {response}")
 
         except Exception as e:
-            # Handle unexpected errors
-            log_event(f"ERROR: {str(e)}")
-
             # Safety shutdown
             controller["ACTUATOR_cmd"] = DEENERGIZE
             controller["IGNITER_cmd"] = DEENERGIZE
+
+            # Handle unexpected errors
+            log_event(f"ERROR: {str(e)}")
             log_event("Emergency shutdown completed")
 
         finally:
