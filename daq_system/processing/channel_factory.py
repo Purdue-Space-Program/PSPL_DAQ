@@ -22,7 +22,7 @@ class ChannelFactory:
     ) -> sy.Channel:
         """Create a data channel with an index"""
         return self.client.channels.create(
-            name=name
+            name=name,
             data_type=data_type,
             index=index_key,
             retrieve_if_name_exists=True,
