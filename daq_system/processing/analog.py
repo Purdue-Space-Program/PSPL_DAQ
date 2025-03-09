@@ -30,8 +30,8 @@ def process_analog_input(
 
         # Create AI voltage channel
         ai_chan = ni.AIVoltageChan(
-            min_val=row["max Volts"],
-            max_val=row["min Volts"],
+            min_val=row["min Volts"],
+            max_val=row["max Volts"] * row["Slope"] + row["Offset"] - 0.001,
             channel=sensor_channel.key,
             port=channel_num,
             device=device.key,
