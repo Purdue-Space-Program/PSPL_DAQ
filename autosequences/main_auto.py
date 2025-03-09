@@ -80,7 +80,7 @@ def run_tc_sequence():
             # log_event(
             #     f"Waiting up to {IGNITION_WAIT_TIME} seconds for TC > {TC_THRESHOLD}"
             # )
-                
+
             if controller.wait_until_defined("TC"):
                 # Using controller.wait_until with a timeout for precise timing
                 tc_threshold_reached = controller.wait_until(
