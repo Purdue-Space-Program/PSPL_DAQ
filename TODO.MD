@@ -1,24 +1,32 @@
-## SOLENOIDS
+## SOLENOIDS (DAQ side)
 
-- [x] Troubleshoot SV-BP-01
-- [x] Troubleshoot PV-HE-01 reed
-- [x] Troubleshoot PV-FU-02 reed
+- [ ] Troubleshoot SV-BP-01
+- [ ] Troubleshoot PV-HE-01 reed
+- [ ] Troubleshoot PV-FU-02 reed
 
 ## AUTOSEQUENCE
 
-- [x] Find pyro lines in lower
-- [x] Add actuator relay
+- [ ] Add actuator relay
 
 ## GSE
 
-- [x] Click test all valves & QDs
-- [x] Add new TC ai
+- [ ] Add new AI line for TC and check
 
 ## ROCKET
 
-- [x] Install upper harness
-- [x] Install BB emergency depress line
+- [ ] Install BB emergency depress line
+- [ ] Reinstall all ducers
+- [ ] Install BB depress system
+- [ ] Checkout QD solenoids
+- [ ] Reinstall QDs
+- [ ] Install injector
+- [ ] Drill struts for avi box
 
-## MISC
+## OPS
 
-- [x] Camera channel test
+- [ ] BB test
+- [ ] LN2 cryo test for TCs w/ slope
+
+## Networking
+
+- [ ] Troubleshoot PI connection issue w/ router

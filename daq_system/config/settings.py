@@ -28,9 +28,17 @@ DEFAULT_DEVICE_PATHS: Dict[str, DeviceWiringPaths] = {
     "Dev5": DeviceWiringPaths(
         data_wiring=Path("daq_system/inputs/CMS_Master_Data_Wiring_Dev5.xlsx"),
         control_wiring=Path("daq_system/inputs/CMS_Master_Control_Wiring_Dev5.xlsx"),
+        # data_wiring=Path("daq_system/inputs/CMS_Mapping_Data_Wiring_Dev5.xlsx"),   # This contains all channels
+        # control_wiring=Path("daq_system/inputs/CMS_Mapping_Control_Wiring_Dev5.xlsx"),   # This contains all channels
     ),
     "Dev6": DeviceWiringPaths(
         data_wiring=Path("daq_system/inputs/CMS_Master_Data_Wiring_Dev6.xlsx"),
         control_wiring=Path("daq_system/inputs/CMS_Master_Control_Wiring_Dev6.xlsx"),
+        # data_wiring=Path(
+        #     "daq_system/inputs/CMS_Mapping_Data_Wiring_Dev6.xlsx"
+        # ),  # This contains all channels
+        # control_wiring=Path(
+        #     "daq_system/inputs/CMS_Mapping_Control_Wiring_Dev6.xlsx"
+        # ),  # This contains all channels
     ),
 }
