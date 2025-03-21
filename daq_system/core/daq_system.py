@@ -25,7 +25,23 @@ class DAQSystem:
     def __init__(self, config: DAQConfig):
         self.config = config
         self.client = self._connect_to_synnax()
+        self._ensure_default_rack_exists()
         self.channel_factory = ChannelFactory(self.client)
+
+    def _ensure_default_rack_exists(self) -> None:
+        """Ensure the default rack exists in Synnax"""
+        try:
+            # Try to retrieve the default rack
+            try:
+                self.client.hardware.racks.retrieve(name="sy_node_1_rack")
+                return  # Rack exists, we're good
+            except Exception:
+                # Rack doesn't exist, create it
+                self.client.hardware.racks.create(
+                    name="sy_node_1_rack", description="Default rack for DAQ system"
+                )
+        except Exception as e:
+            raise ConnectionError(f"Failed to ensure default rack exists: {e}")
 
     def _connect_to_synnax(self) -> sy.Synnax:
         """Establish connection to Synnax server"""
