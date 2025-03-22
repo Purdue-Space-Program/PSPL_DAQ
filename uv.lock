@@ -4,7 +4,7 @@ requires-python = ">=3.13"
 
 [[package]]
 name = "alamos"
-version = "0.38.1"
+version = "0.39.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mypy" },
@@ -13,9 +13,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "uptrace" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d0/b9/56d31d49addd3f71b52b6bb7c6e105be99e072a348a0d85954ddb8fd1ceb/alamos-0.38.1.tar.gz", hash = "sha256:025cf68c70d3037bd194ed8444730e561aac0886a621a069613721161c7e9dda", size = 5140 }
+sdist = { url = "https://files.pythonhosted.org/packages/e4/a3/305c15aa2bf3e71d57b471945059342be40fffe3fbe24615306384908ffb/alamos-0.39.0.tar.gz", hash = "sha256:c803ce48b9b37f95371f00ae888dc8eaee05b05225f8e452f98838c719eaaafc", size = 5129 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/14/92/67934ebcea19b9d6b19378bdcdbab56896cea8b359cfe76938e8fcde2df9/alamos-0.38.1-py3-none-any.whl", hash = "sha256:0cf3c04f7a7dc118951ee9eb7ea4f3fa1ae5693faf65ba2ad26a834d1a936449", size = 8737 },
+    { url = "https://files.pythonhosted.org/packages/5d/64/27f1ab3dcab044e2b7c7407d3e66affa0ffd9641211f3e127a2fd4f0546f/alamos-0.39.0-py3-none-any.whl", hash = "sha256:6b6a9d161ccea945fd3eae9bbe0107e82f72edf3ca7fac097563aafbb04ee4e6", size = 8719 },
 ]
 
 [[package]]
@@ -133,7 +133,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=1.21.0" },
     { name = "openpyxl", specifier = ">=3.0.0" },
     { name = "pandas", specifier = ">=1.5.0" },
-    { name = "synnax", specifier = ">=0.1.0" },
+    { name = "synnax", specifier = ">=0.39.0" },
 ]
 
 [[package]]
@@ -689,7 +689,7 @@ wheels = [
 
 [[package]]
 name = "synnax"
-version = "0.38.1"
+version = "0.39.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "alamos" },
@@ -703,14 +703,14 @@ dependencies = [
     { name = "synnax-freighter" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5e/fd/f68739fdecbc316046be1e1e2457b81fb4790746ad8e55baae18aed77780/synnax-0.38.1.tar.gz", hash = "sha256:9df073a556e39b4bff995a2ca42bea71cf7381a9538546c031f13003f625fac8", size = 80538 }
+sdist = { url = "https://files.pythonhosted.org/packages/25/e7/418ada3db3993d63ca760e47b85ad0cc35ec4111a1b6f1f1b230d95c3eca/synnax-0.39.0.tar.gz", hash = "sha256:763816843412f84e95534ed5c25a58c44e76cd62ddc272f75a00f7e3bad74842", size = 81578 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/3b/4a/56a2a38580ab4a06d407b7e1fe0522cf7044ceef218a606fab1eca4bd3f0/synnax-0.38.1-py3-none-any.whl", hash = "sha256:1157f7792e5f0510348b2e4f9edc7c4652857c0c5b5b17f667cc5a4537ca4118", size = 131670 },
+    { url = "https://files.pythonhosted.org/packages/02/27/330a8e82db4d1d2109fabe3dae52eddf0c3cdd1e08e9df37bd1fbeb4b54c/synnax-0.39.0-py3-none-any.whl", hash = "sha256:0766ca768ce5948e1d9ba3d8bb8a9afc0a77260e7a12c91844d5e814f698267c", size = 133089 },
 ]
 
 [[package]]
 name = "synnax-freighter"
-version = "0.38.1"
+version = "0.39.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "alamos" },
@@ -719,9 +719,9 @@ dependencies = [
     { name = "urllib3" },
     { name = "websockets" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0d/39/8c3bf711668b18d52a9b71fbf714a525a9d637734c479530ccb148b85c0d/synnax_freighter-0.38.1.tar.gz", hash = "sha256:61486219f2b20ea59ae782be4a45b03d1479af5f2ac35dd863c67ff07eba5030", size = 9257 }
+sdist = { url = "https://files.pythonhosted.org/packages/0b/28/e8733cf88748e128766ebb0636bfda5cae130e1970d043229573716ac6d0/synnax_freighter-0.39.0.tar.gz", hash = "sha256:74ac2bfdb646316ac1c3d171db692ce2815ad5284cf0507d96bdfbf4c1a83ca1", size = 10731 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/13/8d/dd80b647f0d3e56d6ce12d54ad4842bfac834720ff57741a5c5d8ff6481f/synnax_freighter-0.38.1-py3-none-any.whl", hash = "sha256:8c81d975d11f39b72dca0bd4d2da2d3793caf4e66eca8f7fa2b9f6ba23ea4a09", size = 14857 },
+    { url = "https://files.pythonhosted.org/packages/5c/fe/0fb00594b2cd6d34dfe6f9ac8345145733a9a70da8d0af3cff1215609340/synnax_freighter-0.39.0-py3-none-any.whl", hash = "sha256:16af71b9223fff162453e582694de428767c0d9ce660da76051e1568ae8472ea", size = 16556 },
 ]
 
 [[package]]
