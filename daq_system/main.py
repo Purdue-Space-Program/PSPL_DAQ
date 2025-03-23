@@ -1,7 +1,13 @@
 import pandas as pd  # type: ignore
+import logging
 from daq_system.config.settings import DAQConfig, DEFAULT_DEVICE_PATHS
 from daq_system.core.daq_system import DAQSystem
 from daq_system.utils.exceptions import DAQError
+from daq_system.utils.logging_config import setup_logging
+
+# Configure logging only once at the start of the application
+setup_logging()
+logger = logging.getLogger(__name__)
 
 # TODO: Bug fix. Dev6 AI tasks does not stop correctly after it is started.
 # TODO: Bug fix. BCLS_state_time does not want to delete. Needs EMU_PWR to be deleted first.
@@ -17,7 +23,7 @@ def main():
 
         # Process each device
         for device_name, paths in DEFAULT_DEVICE_PATHS.items():
-            print(f"\nProcessing {device_name}...")
+            logger.info(f"\nProcessing {device_name}...")
 
             # Get device
             device = daq_system.client.hardware.devices.retrieve(
@@ -32,10 +38,10 @@ def main():
             daq_system.setup_device(device, data_wiring, control_wiring)
 
     except DAQError as e:
-        print(f"DAQ Error: {e}")
+        logger.error(f"DAQ Error: {e}")
         raise
     except Exception as e:
-        print(f"Unexpected error: {e}")
+        logger.error(f"Unexpected error: {e}", exc_info=True)
         raise
 
 

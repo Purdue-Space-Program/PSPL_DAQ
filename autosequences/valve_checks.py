@@ -47,14 +47,14 @@ def run_valve_check_sequence():
         {
             "name": "SV-BP-01",
             "cmd": "SV-BP-01_cmd",
-            "reed": "reed-BP-01",
+            "reed": "REED-BP-01",
             "normally": "Closed",
             "has_reed": True,
         },
         {
             "name": "SV-N2-02",
             "cmd": "SV-N2-02_cmd",
-            "reed": "reed-N2-02",
+            "reed": "REED-N2-02",
             "normally": "Closed",
             "has_reed": True,
         },
