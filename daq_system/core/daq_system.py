@@ -11,13 +11,14 @@ from ..utils.exceptions import ConnectionError, TaskError
 from ..processing.channel_factory import ChannelFactory
 from ..processing.analog import process_analog_input
 from ..processing.digital import process_digital_input, process_digital_output
+from ..utils.logging_config import setup_logging
 
 # DEFINE STATES
 ENERGIZED = 0
 DEENERGIZED = 1
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+# Configure logging only once
+setup_logging()
 logger = logging.getLogger(__name__)
 
 
@@ -50,8 +51,10 @@ class DAQSystem:
         try:
             # Try to get driver status
             if not hasattr(self.client.hardware, "drivers"):
-                logger.warning(
-                    "Synnax client does not have drivers attribute. This may indicate an older version or different configuration."
+                # This is expected behavior for some Synnax versions
+                logger.debug(
+                    "Synnax client does not have drivers attribute. "
+                    "This is normal for some Synnax versions and does not indicate a problem."
                 )
                 # Try to verify driver status by attempting to retrieve devices
                 try:

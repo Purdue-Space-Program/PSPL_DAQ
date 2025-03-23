@@ -9,6 +9,7 @@ from .exceptions import (
     DeviceError,
     TaskError,
 )
+from .logging_config import setup_logging
 
 __all__ = [
     "DAQError",
@@ -16,4 +17,5 @@ __all__ = [
     "ConfigurationError",
     "DeviceError",
     "TaskError",
+    "setup_logging",
 ]
