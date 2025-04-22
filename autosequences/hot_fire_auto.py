@@ -1,4 +1,4 @@
-import synnax as sy
+import synnax as sy # type: ignore
 from datetime import datetime
 
 ENERGIZE = 0
@@ -38,14 +38,17 @@ def run_sequence():
     PURGE_CMD = "SV-N2-02_cmd"
     PURGE_STATE = "SV-N2-02_state"
 
+    ACTUATOR_CMD = "ACTUATOR_cmd"
+    ACTUATOR_STATE = "ACTUATOR_state"
+
     log_event("Starting Hot Fire Auto Sequence")
 
     try:
         # Open a control sequence under a context manager, so control is released when done
         with client.control.acquire(
             name="Hot Fire Auto Sequence",
-            write=[IGNITOR_CMD, DELUGE_CMD, PURGE_CMD],
-            read=[IGNITOR_STATE, DELUGE_STATE, PURGE_STATE],
+            write=[IGNITOR_CMD, DELUGE_CMD, PURGE_CMD, ACTUATOR_CMD],
+            read=[IGNITOR_STATE, DELUGE_STATE, PURGE_STATE, ACTUATOR_STATE],
             write_authorities=[200],  # Set high authority to prevent interference
         ) as ctrl:
             log_event("Control sequence acquired")
@@ -53,54 +56,146 @@ def run_sequence():
             # Mark the start of the sequence
             start = sy.TimeStamp.now()
 
-            # Set initial conditions (like energizing the igniter)
-            log_event("Activating igniter")
-            ctrl[IGNITOR_CMD] = ENERGIZE
-            ctrl[DELUGE_CMD] = ENERGIZE
+            # Start the N2 purge at T-5
+            log_event("Activating N2-Purge")
             ctrl[PURGE_CMD] = ENERGIZE
 
-            # Wait until the ignitor state is activated (assuming it goes high)
+            # Wait until the N2 Purge activates
             if ctrl.wait_until(
-                lambda c: c[IGNITOR_STATE] == ENERGIZE,
-                timeout=30
-                * sy.TimeSpan.SECOND,  # Wait up to 30 seconds for the igniter to activate
+                lambda c: c[PURGE_STATE] == ENERGIZE,
+                timeout = 5 * sy.TimeSpan.SECOND,
             ):
-                log_event("Igniter activated successfully")
+                log_event("N2 Purge Sucessfully Activated")
             else:
-                log_event("Failed to activate igniter within timeout")
-                # Emergency shutdown in case of failure
-                ctrl[IGNITOR_CMD] = DEENERGIZE
-                log_event("Emergency shutdown completed")
+                # Shutdown and abort autosequence if purge fails to open
+                ctrl[PURGE_CMD] = DEENERGIZE
+                log_event('N2 Purge failed to start, Autosequence aborted')
                 return
 
-            # Run the actuator for a specified amount of time (simulated run time)
-            ctrl.sleep(20)  # Simulating 5 seconds of operation
+            # Activate the Water Deluge at T-3
+            ctrl.sleep(2)
+            log_event("Activating Water Deluge")
+            ctrl[DELUGE_CMD]= ENERGIZE
 
-            # De-energize the igniter (shutdown)
-            log_event("De-energizing igniter")
+            # Wait until the Water Deluge activates
+            if ctrl.wait_until(
+                lambda c: c[DELUGE_STATE] == ENERGIZE,
+                timeout = 5 * sy.TimeSpan.SECOND,
+            ):
+                log_event("Water Deluge Sucessfully Activated")
+            else:
+                # Shutdown and abort autosequence if Deluge fails to open
+                ctrl[DELUGE_CMD] = DEENERGIZE
+                ctrl[PURGE_CMD] = DEENERGIZE
+                log_event('Water Deluge failed to start, Autosequence aborted')
+                return
+            
+            # Fire the Ignitor at T-0
+            ctrl.sleep(3)
+            log_event("Firing Ignitor Pyro")
+            ctrl[IGNITOR_CMD] = ENERGIZE
+
+            # Check for ignition
+            if ctrl.wait_until(
+                lambda c: c[IGNITOR_STATE] == ENERGIZE,
+                timeout = 2 * sy.TimeSpan.SECOND,
+            ):
+                log_event("Ignitor Pyro Fired")
+            else:
+                # Shutdown and abort autosequence if ignitor does not fire
+                ctrl[IGNITOR_CMD] = DEENERGIZE
+                log_event("Ignitor Ignition Failed, aborting Autosequence")
+                crtl.sleep(3)
+                ctrl[DELUGE_CMD] = DEENERGIZE
+                ctrl[PURGE_CMD] = DEENERGIZE
+                log_event('Autosequence Aborted')
+                return
+
+            # Fire the Actuator pyro at T+3
+            ctrl.sleep(3)
+            log_event("Firing Actuator Pyro")
+            ctrl[ACTUATOR_CMD] = ENERGIZE
+
+            # Check for Actuator firing
+            if ctrl.wait_until(
+                lambda c: c[ACTUATOR_STATE] == ENERGIZE,
+                timeout = 2 * sy.TimeSpan.SECOND,
+            ):
+                log_event("Actuator Fired")
+            else:
+                # Shutdown and abort autosequence if Actuator fails
+                ctrl[ACTUATOR_CMD] = DEENERGIZE
+                ctrl[IGNITOR_CMD] = DEENERGIZE
+                log_event("Actuator failed to fire, aborting Autosequence")
+                crtl.sleep(3)
+                ctrl[DELUGE_CMD] = DEENERGIZE
+                ctrl[PURGE_CMD] = DEENERGIZE
+                log_event('Autosequence Aborted')
+                return
+
+            ctrl.sleep(15)
+
+            # deenergize system
+            # deenergize actuator
+            ctrl[ACTUATOR_CMD] = DEENERGIZE
+
+            # Wait until the actuator is deactivated 
+            if ctrl.wait_until(
+                lambda c: c[ACTUATOR_STATE] == DEENERGIZE,
+                timeout=10 * sy.TimeSpan.SECOND, 
+            ):
+                log_event("Actuator deactivated successfully")
+            else:
+                log_event("Failed to deactivate Actuator within timeout")
+
+            # deenergize ignitor
             ctrl[IGNITOR_CMD] = DEENERGIZE
-            ctrl[DELUGE_CMD] = DEENERGIZE
 
-            # Wait until the igniter is deactivated (assuming the state goes low)
+            # Wait until the ignitor is deactivated 
             if ctrl.wait_until(
                 lambda c: c[IGNITOR_STATE] == DEENERGIZE,
-                timeout=10
-                * sy.TimeSpan.SECOND,  # Wait up to 10 seconds for deactivation
+                timeout=10 * sy.TimeSpan.SECOND, 
             ):
                 log_event("Igniter deactivated successfully")
             else:
                 log_event("Failed to deactivate igniter within timeout")
+            
+            # pause before deluge shutoff
+            ctrl.sleep(3)
+            ctrl[DELUGE_CMD] = DEENERGIZE
+
+            # Wait until the deluge is shutoff
+            if ctrl.wait_until(
+                lambda c: c[DELUGE_STATE] == DEENERGIZE,
+                timeout=10 * sy.TimeSpan.SECOND, 
+            ):
+                log_event("Deluge shutoff sucessfull")
+            else:
+                log_event("Failed to shutoff deugle within timeout")
+
+            # pause before N2 purge shutoff
+            ctrl.sleep(3)
+            ctrl[PURGE_CMD] = DEENERGIZE
+
+            # Wait until the N2 purge is shotoff
+            if ctrl.wait_until(
+                lambda c: c[PURGE_STATE] == DEENERGIZE,
+                timeout=10 * sy.TimeSpan.SECOND, 
+            ):
+                log_event("N2 Purge shutoff sucessfull")
+            else:
+                log_event("Failed to shutoff N2 Purge within timeout")
 
             # Mark the end of the sequence
             end = sy.TimeStamp.now()
 
             # Label the sequence with the end time
             client.ranges.create(
-                name=f"Cold Flow Auto Sequence {end}",
+                name=f"Hot Fire Auto Sequence {end}",
                 time_range=sy.TimeRange(start=start, end=end),
             )
 
-            log_event(f"Cold Flow Auto Sequence completed: {start} to {end}")
+            log_event(f"Hot Fire Auto Sequence completed: {start} to {end}")
 
     except Exception as e:
         log_event(f"Error occurred during sequence execution: {str(e)}")
