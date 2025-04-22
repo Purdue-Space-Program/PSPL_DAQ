@@ -13,7 +13,7 @@ def log_event(message):
 
 # Main autosequence
 def run_sequence():
-    """Execute the Cold Flow Auto Sequence with control logic."""
+    """Execute the Hot Fire Auto Sequence with control logic."""
     # Connect to the Synnax system
     try:
         client = sy.Synnax(
@@ -35,14 +35,17 @@ def run_sequence():
     DELUGE_CMD = "DELUGE_cmd"
     DELUGE_STATE = "DELUGE_state"
 
-    log_event("Starting Cold Flow Auto Sequence")
+    PURGE_CMD = "SV-N2-02_cmd"
+    PURGE_STATE = "SV-N2-02_state"
+
+    log_event("Starting Hot Fire Auto Sequence")
 
     try:
         # Open a control sequence under a context manager, so control is released when done
         with client.control.acquire(
-            name="Cold Flow Auto Sequence",
-            write=[IGNITOR_CMD, DELUGE_CMD],
-            read=[IGNITOR_STATE, DELUGE_STATE],
+            name="Hot Fire Auto Sequence",
+            write=[IGNITOR_CMD, DELUGE_CMD, PURGE_CMD],
+            read=[IGNITOR_STATE, DELUGE_STATE, PURGE_STATE],
             write_authorities=[200],  # Set high authority to prevent interference
         ) as ctrl:
             log_event("Control sequence acquired")
@@ -54,6 +57,7 @@ def run_sequence():
             log_event("Activating igniter")
             ctrl[IGNITOR_CMD] = ENERGIZE
             ctrl[DELUGE_CMD] = ENERGIZE
+            ctrl[PURGE_CMD] = ENERGIZE
 
             # Wait until the ignitor state is activated (assuming it goes high)
             if ctrl.wait_until(
