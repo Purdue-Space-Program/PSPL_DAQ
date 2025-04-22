@@ -105,7 +105,7 @@ def run_sequence():
                 # Shutdown and abort autosequence if ignitor does not fire
                 ctrl[IGNITOR_CMD] = DEENERGIZE
                 log_event("Ignitor Ignition Failed, aborting Autosequence")
-                crtl.sleep(3)
+                ctrl.sleep(3)
                 ctrl[DELUGE_CMD] = DEENERGIZE
                 ctrl[PURGE_CMD] = DEENERGIZE
                 log_event('Autosequence Aborted')
@@ -127,7 +127,7 @@ def run_sequence():
                 ctrl[ACTUATOR_CMD] = DEENERGIZE
                 ctrl[IGNITOR_CMD] = DEENERGIZE
                 log_event("Actuator failed to fire, aborting Autosequence")
-                crtl.sleep(3)
+                ctrl.sleep(3)
                 ctrl[DELUGE_CMD] = DEENERGIZE
                 ctrl[PURGE_CMD] = DEENERGIZE
                 log_event('Autosequence Aborted')
