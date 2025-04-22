@@ -7,8 +7,8 @@ from typing import Dict
 class DAQConfig:
     """Configuration settings for DAQ system"""
 
-    sample_rate: int = 1000  # Hz
-    stream_rate: int = 100  # Hz
+    sample_rate: int = 100  # Hz
+    stream_rate: int = 10  # Hz
     host: str = "128.46.118.59"
     port: int = 9090
     username: str = "Bill"
@@ -31,14 +31,14 @@ DEFAULT_DEVICE_PATHS: Dict[str, DeviceWiringPaths] = {
         # data_wiring=Path("daq_system/inputs/CMS_Mapping_Data_Wiring_Dev5.xlsx"),   # This contains all channels
         # control_wiring=Path("daq_system/inputs/CMS_Mapping_Control_Wiring_Dev5.xlsx"),   # This contains all channels
     ),
-    "Dev6": DeviceWiringPaths(
-        data_wiring=Path("daq_system/inputs/CMS_Master_Data_Wiring_Dev6.xlsx"),
-        control_wiring=Path("daq_system/inputs/CMS_Master_Control_Wiring_Dev6.xlsx"),
-        # data_wiring=Path(
-        #     "daq_system/inputs/CMS_Mapping_Data_Wiring_Dev6.xlsx"
-        # ),  # This contains all channels
-        # control_wiring=Path(
-        #     "daq_system/inputs/CMS_Mapping_Control_Wiring_Dev6.xlsx"
-        # ),  # This contains all channels
-    ),
+    # "Dev6": DeviceWiringPaths(
+    #     data_wiring=Path("daq_system/inputs/CMS_Master_Data_Wiring_Dev6.xlsx"),
+    #     control_wiring=Path("daq_system/inputs/CMS_Master_Control_Wiring_Dev6.xlsx"),
+    #     # data_wiring=Path(
+    #     #     "daq_system/inputs/CMS_Mapping_Data_Wiring_Dev6.xlsx"
+    #     # ),  # This contains all channels
+    #     # control_wiring=Path(
+    #     #     "daq_system/inputs/CMS_Mapping_Control_Wiring_Dev6.xlsx"
+    #     # ),  # This contains all channels
+    # ),
 }
