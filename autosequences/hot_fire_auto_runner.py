@@ -200,5 +200,60 @@ def run_sequence():
         log_event(f"Error occurred during sequence execution: {str(e)}")
 
 
+def wait_for_trigger():
+    #aquire synnax connection
+    try:
+        client = sy.Synnax(
+            host="128.46.118.59",
+            port=9090,
+            username="Bill",
+            password="Bill",
+            secure=False,
+        )
+        log_event("Connected to Synnax for trigger monitoring")
+    except Exception as e:
+        log_event(f"Failed to connect to Synnax system for trigger monitoring: {str(e)}")
+        return
+
+    # Check for channels
+    arm_channel = client.channels.create(
+        name="ARM_AUTO",
+        data_type="uint8",
+        virtual=True,
+        retrieve_if_name_exists=True,
+    )
+
+    run_channel = client.channels.create(
+        name="RUN_AUTO",
+        data_type="uint8",
+        virtual=True,
+        retrieve_if_name_exists=True,
+    )
+
+    arm_key = arm_channel.key
+    run_key = run_channel.key
+
+    # Open a streamer that listens to ARM_AUTO and RUN_AUTO channels
+    with client.open_streamer(arm_key, run_key) as streamer:
+        log_event("Listening for trigger signals")
+        while True:
+            frame = streamer.read()
+            arm_val = frame[arm_key]
+            run_val = frame[run_key]
+
+            if len(arm_val) == 0:
+                arm_val = 0
+            if len(run_val) == 0:
+                run_val = 0
+
+            print(arm_val, run_val)
+            if arm_val == 1 and run_val == 1:
+                log_event("Trigger received: ARM_AUTO=1 and RUN_AUTO=1")
+                run_sequence()
+                break  # exit after running once
+
 if __name__ == "__main__":
-    run_sequence()
+    wait_for_trigger()
+
+
+    
