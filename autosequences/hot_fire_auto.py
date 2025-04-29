@@ -273,6 +273,7 @@ def wait_for_trigger():
         client.open_writer(start=sy.TimeStamp.now(), channels=[armed_state_key, status_key], enable_auto_commit=True) as writer:
 
         log_event("Listening for trigger signals")
+        writer.write({status_key: [1]})
         for frame in streamer:
             for v in frame[reset_key]:
                 if v == 1:
@@ -301,6 +302,8 @@ def wait_for_trigger():
             writer.write({status_key: [1 if active_flag else 0]})
 
             if shutdown_flag:
+                writer.write({status_key: [0]})
+                print('Shutting down autosequence')
                 break
 
 if __name__ == "__main__":
