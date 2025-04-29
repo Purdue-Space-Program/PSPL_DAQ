@@ -303,6 +303,7 @@ def wait_for_trigger():
 
             if shutdown_flag:
                 writer.write({status_key: [0]})
+                writer.write({armed_state_key: [0]})
                 print('Shutting down autosequence')
                 break
 
