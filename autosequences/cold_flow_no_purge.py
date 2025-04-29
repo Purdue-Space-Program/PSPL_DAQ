@@ -34,9 +34,6 @@ def run_sequence():
     DELUGE_CMD = "DELUGE_cmd"
     DELUGE_STATE = "DELUGE_state"
 
-    PURGE_CMD = "SV-N2-02_cmd"
-    PURGE_STATE = "SV-N2-02_state"
-
     ACTUATOR_CMD = "ACTUATOR_cmd"
     ACTUATOR_STATE = "ACTUATOR_state"
 
@@ -46,30 +43,14 @@ def run_sequence():
         # Open a control sequence under a context manager, so control is released when done
         with client.control.acquire(
             name="Hot Fire Auto Sequence",
-            write=[IGNITOR_CMD, DELUGE_CMD, PURGE_CMD, ACTUATOR_CMD],
-            read=[IGNITOR_STATE, DELUGE_STATE, PURGE_STATE, ACTUATOR_STATE],
+            write=[IGNITOR_CMD, DELUGE_CMD, ACTUATOR_CMD],
+            read=[IGNITOR_STATE, DELUGE_STATE, ACTUATOR_STATE],
             write_authorities=[200],  # Set high authority to prevent interference
         ) as ctrl:
             log_event("Control sequence acquired")
 
             # Mark the start of the sequence
             start = sy.TimeStamp.now()
-
-            # Start the N2 purge at T-5
-            log_event("Activating N2-Purge")
-            ctrl[PURGE_CMD] = ENERGIZE
-
-            # Wait until the N2 Purge activates
-            if ctrl.wait_until(
-                lambda c: c[PURGE_STATE] == ENERGIZE,
-                timeout = 5 * sy.TimeSpan.SECOND,
-            ):
-                log_event("N2 Purge Sucessfully Activated")
-            else:
-                # Shutdown and abort autosequence if purge fails to open
-                ctrl[PURGE_CMD] = DEENERGIZE
-                log_event('N2 Purge failed to start, Autosequence aborted')
-                return
 
             # Activate the Water Deluge at T-3
             ctrl.sleep(2)
@@ -128,7 +109,6 @@ def run_sequence():
                 log_event("Actuator failed to fire, aborting Autosequence")
                 ctrl.sleep(3)
                 ctrl[DELUGE_CMD] = DEENERGIZE
-                ctrl[PURGE_CMD] = DEENERGIZE
                 log_event('Autosequence Aborted')
                 return
 
@@ -171,19 +151,6 @@ def run_sequence():
                 log_event("Deluge shutoff sucessfull")
             else:
                 log_event("Failed to shutoff deugle within timeout")
-
-            # pause before N2 purge shutoff
-            ctrl.sleep(3)
-            ctrl[PURGE_CMD] = DEENERGIZE
-
-            # Wait until the N2 purge is shotoff
-            if ctrl.wait_until(
-                lambda c: c[PURGE_STATE] == DEENERGIZE,
-                timeout=10 * sy.TimeSpan.SECOND, 
-            ):
-                log_event("N2 Purge shutoff sucessfull")
-            else:
-                log_event("Failed to shutoff N2 Purge within timeout")
 
             # Mark the end of the sequence
             end = sy.TimeStamp.now()
@@ -230,78 +197,34 @@ def wait_for_trigger():
         retrieve_if_name_exists=True,
     )
 
-    reset_channel = client.channels.create(
-        name="RESET_AUTO",
-        data_type="uint8",
-        virtual=True,
-        retrieve_if_name_exists=True,
-    )
-
-    shutdown_channel = client.channels.create(
-        name="SEQUENCE_SHUTDOWN",
-        data_type="uint8",
-        virtual=True,
-        retrieve_if_name_exists=True,
-    )
-
-    status_channel = client.channels.create(
-        name="AUTOSEQUENCE_STATUS",
-        data_type="uint8",
-        virtual=True,
-        retrieve_if_name_exists=True,
-    )
-
-    armed_state_channel = client.channels.create(
-        name="AUTOSEQUENCE_ARMED_STATE",
-        data_type="uint8",
-        virtual=True,
-        retrieve_if_name_exists=True,
-    )
-
     arm_key = arm_channel.key
     run_key = run_channel.key
-    reset_key = reset_channel.key
-    shutdown_key = shutdown_channel.key
-    status_key = status_channel.key
-    armed_state_key = armed_state_channel.key
 
     arm_flag = False
-    active_flag = True
-    shutdown_flag = False
+    complete = False
 
-    with client.open_streamer([arm_key, run_key, reset_key, shutdown_key]) as streamer, \
-        client.open_writer(start=sy.TimeStamp.now(), channels=[armed_state_key, status_key], enable_auto_commit=True) as writer:
-
+    # Open a streamer that listens to ARM_AUTO and RUN_AUTO channels
+    with client.open_streamer([arm_key, run_key]) as streamer:
         log_event("Listening for trigger signals")
         for frame in streamer:
-            for v in frame[reset_key]:
-                if v == 1:
-                    active_flag = True
-                    print('Autosequence reset')
-            for v in frame[shutdown_key]:
-                if v == 1:
-                    shutdown_flag = True
             for v in frame[arm_key]:
                 if v == 1:
                     arm_flag = True
                     print('Armed.')
                 elif v == 0:
                     arm_flag = False
-                    print('Disarmed.')  
+                    print('Disarmed.')
             for v in frame[run_key]:
-                if arm_flag and active_flag and v == 1:
+                print('Run received')
+                if v == 1:
+                    print(arm_flag)
                     log_event("Trigger received, starting Autosequence")
-                    writer.write({armed_state_key: [0]})
-                    writer.write({status_key: [0]})
-                    active_flag = False 
-                    arm_flag = False
                     run_sequence()
-                     
-            writer.write({armed_state_key: [1 if arm_flag else 0]})
-            writer.write({status_key: [1 if active_flag else 0]})
-
-            if shutdown_flag:
-                break
+                    complete = True
+                if complete:
+                    break
+            if complete:
+                break                
 
 if __name__ == "__main__":
     wait_for_trigger()    
