@@ -53,7 +53,6 @@ def run_sequence():
             start = sy.TimeStamp.now()
 
             # Activate the Water Deluge at T-3
-            ctrl.sleep(2)
             log_event("Activating Water Deluge")
             ctrl[DELUGE_CMD]= ENERGIZE
 
@@ -66,7 +65,6 @@ def run_sequence():
             else:
                 # Shutdown and abort autosequence if Deluge fails to open
                 ctrl[DELUGE_CMD] = DEENERGIZE
-                ctrl[PURGE_CMD] = DEENERGIZE
                 log_event('Water Deluge failed to start, Autosequence aborted')
                 return
             
@@ -87,7 +85,6 @@ def run_sequence():
                 log_event("Ignitor Ignition Failed, aborting Autosequence")
                 ctrl.sleep(3)
                 ctrl[DELUGE_CMD] = DEENERGIZE
-                ctrl[PURGE_CMD] = DEENERGIZE
                 log_event('Autosequence Aborted')
                 return
 
@@ -197,34 +194,81 @@ def wait_for_trigger():
         retrieve_if_name_exists=True,
     )
 
+    reset_channel = client.channels.create(
+        name="RESET_AUTO",
+        data_type="uint8",
+        virtual=True,
+        retrieve_if_name_exists=True,
+    )
+
+    shutdown_channel = client.channels.create(
+        name="SEQUENCE_SHUTDOWN",
+        data_type="uint8",
+        virtual=True,
+        retrieve_if_name_exists=True,
+    )
+
+    status_channel = client.channels.create(
+        name="AUTOSEQUENCE_STATUS",
+        data_type="uint8",
+        virtual=True,
+        retrieve_if_name_exists=True,
+    )
+
+    armed_state_channel = client.channels.create(
+        name="AUTOSEQUENCE_ARMED_STATE",
+        data_type="uint8",
+        virtual=True,
+        retrieve_if_name_exists=True,
+    )
+
     arm_key = arm_channel.key
     run_key = run_channel.key
+    reset_key = reset_channel.key
+    shutdown_key = shutdown_channel.key
+    status_key = status_channel.key
+    armed_state_key = armed_state_channel.key
 
     arm_flag = False
-    complete = False
+    active_flag = True
+    shutdown_flag = False
 
-    # Open a streamer that listens to ARM_AUTO and RUN_AUTO channels
-    with client.open_streamer([arm_key, run_key]) as streamer:
+    with client.open_streamer([arm_key, run_key, reset_key, shutdown_key]) as streamer, \
+        client.open_writer(start=sy.TimeStamp.now(), channels=[armed_state_key, status_key], enable_auto_commit=True) as writer:
+
         log_event("Listening for trigger signals")
+        writer.write({status_key: [1]})
         for frame in streamer:
+            for v in frame[reset_key]:
+                if v == 1:
+                    active_flag = True
+                    print('Autosequence reset')
+            for v in frame[shutdown_key]:
+                if v == 1:
+                    shutdown_flag = True
             for v in frame[arm_key]:
                 if v == 1:
                     arm_flag = True
                     print('Armed.')
                 elif v == 0:
                     arm_flag = False
-                    print('Disarmed.')
+                    print('Disarmed.')  
             for v in frame[run_key]:
-                print('Run received')
-                if v == 1:
-                    print(arm_flag)
+                if arm_flag and active_flag and v == 1:
                     log_event("Trigger received, starting Autosequence")
+                    writer.write({armed_state_key: [0]})
+                    writer.write({status_key: [0]})
+                    active_flag = False 
+                    arm_flag = False
                     run_sequence()
-                    complete = True
-                if complete:
-                    break
-            if complete:
-                break                
+                     
+            writer.write({armed_state_key: [1 if arm_flag else 0]})
+            writer.write({status_key: [1 if active_flag else 0]})
+
+            if shutdown_flag:
+                writer.write({status_key: [0]})
+                print('Shutting down autosequence')
+                break
 
 if __name__ == "__main__":
     wait_for_trigger()    
