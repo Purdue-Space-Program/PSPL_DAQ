@@ -1,8 +1,11 @@
 import synnax as sy # type: ignore
 from datetime import datetime
+import command as cmd
 
 ENERGIZE = 0
 DEENERGIZE = 1
+
+onboard_active = False
 
 
 def log_event(message):
@@ -40,6 +43,10 @@ def run_abort():
 
         ACTUATOR_CMD = "ACTUATOR_cmd"
         ACTUATOR_STATE = "ACTUATOR_state"
+
+        if onboard_active:
+            cmd.send_command("abort")
+            log_event("Start command sent to Rocketside system")
 
         with client.control.acquire(
             name="Abort Sequence",
@@ -134,6 +141,20 @@ def wait_for_trigger():
         retrieve_if_name_exists=True,
     )
 
+    abort_active_channel = client.channels.create(
+        name="ABORT_ACTIVE",
+        data_type="uint8",
+        virtual=True,
+        retrieve_if_name_exists=True,
+    )
+
+    sequence_active_channel = client.channels.create(
+        name="SEQUENCE_ACTIVE",
+        data_type="uint8",
+        virtual=True,
+        retrieve_if_name_exists=True,
+    )
+
     status_channel = client.channels.create(
         name="ABORT_STATUS",
         data_type="uint8",
@@ -153,13 +174,15 @@ def wait_for_trigger():
     shutdown_key = shutdown_channel.key
     status_key = status_channel.key
     armed_state_key = armed_state_channel.key
+    abort_active_key = abort_active_channel.key
+    sequence_active_key = sequence_active_channel.key
 
     arm_flag = False
     active_flag = True
     shutdown_flag = False
 
     with client.open_streamer([arm_key, abort_key,  shutdown_key]) as streamer, \
-        client.open_writer(start=sy.TimeStamp.now(), channels=[armed_state_key, status_key], enable_auto_commit=True) as writer:
+        client.open_writer(start=sy.TimeStamp.now(), channels=[armed_state_key, status_key, abort_active_key, sequence_active_key], enable_auto_commit=True) as writer:
 
         log_event("Listening for trigger signals")
         writer.write({status_key: [1]})
@@ -170,16 +193,19 @@ def wait_for_trigger():
             for v in frame[arm_key]:
                 if v == 1:
                     arm_flag = True
-                    print('Abort Armed.')
+                    log_event('Abort Armed.')
                 elif v == 0:
                     arm_flag = False
-                    print('Abort Disarmed.')  
+                    log_event('Abort Disarmed.')  
             for v in frame[abort_key]:
                 if arm_flag and active_flag and v == 1:
                     log_event("Trigger received, starting abort sequence")
                     writer.write({status_key: [0]})
+                    writer.write({abort_active_key: [1]})
+                    writer.write({sequence_active_key: [0]})
                     run_abort()
                     writer.write({status_key: [1]})
+                    writer.write({abort_active_key: [0]})
                      
             writer.write({armed_state_key: [1 if arm_flag else 0]})
             writer.write({status_key: [1 if active_flag else 0]})
@@ -187,7 +213,7 @@ def wait_for_trigger():
             if shutdown_flag:
                 writer.write({status_key: [0]})
                 writer.write({armed_state_key: [0]})
-                print('Shutting down autosequence')
+                log_event('Shutting down abort')
                 break
 
 if __name__ == "__main__":

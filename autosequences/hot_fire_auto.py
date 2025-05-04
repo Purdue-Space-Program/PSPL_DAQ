@@ -1,8 +1,10 @@
 import synnax as sy # type: ignore
 from datetime import datetime
-
+import command as cmd
 ENERGIZE = 0
 DEENERGIZE = 1
+
+onboard_active = False
 
 
 def log_event(message):
@@ -41,6 +43,9 @@ def run_sequence():
     ACTUATOR_STATE = "ACTUATOR_state"
 
     log_event("Starting Hot Fire Auto Sequence")
+    if onboard_active:
+        cmd.send_command("start")
+        log_event("Start command sent to Rocketside system")
 
     try:
         # Open a control sequence under a context manager, so control is released when done
@@ -258,19 +263,36 @@ def wait_for_trigger():
         retrieve_if_name_exists=True,
     )
 
+    arm_abort_channel = client.channels.create(
+        name="ARM_ABORT",
+        data_type="uint8",
+        virtual=True,
+        retrieve_if_name_exists=True,
+    )
+
+    sequence_active_channel = client.channels.create(
+        name="SEQUENCE_ACTIVE",
+        data_type="uint8",
+        virtual=True,
+        retrieve_if_name_exists=True,
+    )
+
     arm_key = arm_channel.key
     run_key = run_channel.key
     reset_key = reset_channel.key
     shutdown_key = shutdown_channel.key
     status_key = status_channel.key
     armed_state_key = armed_state_channel.key
+    arm_abort_key = arm_abort_channel.key
+    sequence_active_key = sequence_active_channel.key
 
     arm_flag = False
+    arm_abort_flag = False
     active_flag = True
     shutdown_flag = False
 
-    with client.open_streamer([arm_key, run_key, reset_key, shutdown_key]) as streamer, \
-        client.open_writer(start=sy.TimeStamp.now(), channels=[armed_state_key, status_key], enable_auto_commit=True) as writer:
+    with client.open_streamer([arm_key, run_key, reset_key, shutdown_key, arm_abort_key]) as streamer, \
+        client.open_writer(start=sy.TimeStamp.now(), channels=[armed_state_key, status_key, sequence_active_key], enable_auto_commit=True) as writer:
 
         log_event("Listening for trigger signals")
         writer.write({status_key: [1]})
@@ -278,25 +300,32 @@ def wait_for_trigger():
             for v in frame[reset_key]:
                 if v == 1:
                     active_flag = True
-                    print('Autosequence reset')
+                    log_event('Autosequence reset')
             for v in frame[shutdown_key]:
                 if v == 1:
                     shutdown_flag = True
             for v in frame[arm_key]:
                 if v == 1:
                     arm_flag = True
-                    print('Armed.')
+                    log_event('Autosequence armed')
                 elif v == 0:
                     arm_flag = False
-                    print('Disarmed.')  
+                    log_event('Autosequence disarmed') 
+            for v in frame[arm_abort_key]:
+                if v == 1:
+                    arm_abort_flag = True
+                elif v == 0:
+                    arm_abort_flag = False  
             for v in frame[run_key]:
-                if arm_flag and active_flag and v == 1:
+                if arm_flag and active_flag and arm_abort_flag and v == 1:
                     log_event("Trigger received, starting Autosequence")
                     writer.write({armed_state_key: [0]})
                     writer.write({status_key: [0]})
+                    writer.write({sequence_active_key: [1]})
                     active_flag = False 
                     arm_flag = False
                     run_sequence()
+                    writer.write({sequence_active_key: [0]})
                      
             writer.write({armed_state_key: [1 if arm_flag else 0]})
             writer.write({status_key: [1 if active_flag else 0]})
@@ -304,7 +333,7 @@ def wait_for_trigger():
             if shutdown_flag:
                 writer.write({status_key: [0]})
                 writer.write({armed_state_key: [0]})
-                print('Shutting down autosequence')
+                log_event('Shutting down autosequence')
                 break
 
 if __name__ == "__main__":
