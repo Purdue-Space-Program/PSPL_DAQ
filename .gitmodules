@@ -1,0 +1,3 @@
+[submodule "PSPL_CMS_AVIONICS_COTS_FSW"]
+	path = PSPL_CMS_AVIONICS_COTS_FSW
+	url = https://github.com/Purdue-Space-Program/PSPL_CMS_AVIONICS_COTS_FSW
