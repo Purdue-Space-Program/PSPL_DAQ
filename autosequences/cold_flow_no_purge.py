@@ -3,6 +3,8 @@ from datetime import datetime
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'PSPL_CMS_AVIONICS_COTS_FSW', 'tools')))
+import command as cmd # type: ignore
+
 ENERGIZE = 0
 DEENERGIZE = 1
 
