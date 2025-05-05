@@ -1,6 +1,9 @@
 import synnax as sy # type: ignore
 from datetime import datetime
-import command as cmd
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'PSPL_CMS_AVIONICS_COTS_FSW', 'tools')))
+
 ENERGIZE = 0
 DEENERGIZE = 1
 
