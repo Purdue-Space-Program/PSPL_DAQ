@@ -12,13 +12,15 @@ DEENERGIZE = 1
 onboard_active = False
 
 
-def log_event(message):
+def log_event(message, writer, log_key):
     """Log events with timestamps."""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-    print(f"[{timestamp}] {message}")
+    fullMessage = f"[{timestamp}] {"Abort: "}{message}"
+    print(fullMessage)
+    writer.write({log_key: [fullMessage]})
 
 # Manual abort sequence
-def run_abort():
+def run_abort(writer, log_key):
     # Connect to the Synnax system
     try:
         client = sy.Synnax(
@@ -28,9 +30,9 @@ def run_abort():
             password="Bill",
             secure=False,  # Ensure secure is set to False unless your system requires it
         )
-        log_event("Connected to Synnax system")
+        log_event("Connected to Synnax system", writer, log_key)
     except Exception as e:
-        log_event(f"Failed to connect to Synnax system: {str(e)}")
+        log_event(f"Failed to connect to Synnax system: {str(e)}", writer, log_key)
         return
 
 
@@ -50,7 +52,7 @@ def run_abort():
 
         if onboard_active:
             cmd.send_command("abort")
-            log_event("Start command sent to Rocketside system")
+            log_event("Start command sent to Rocketside system", writer, log_key)
 
         with client.control.acquire(
             name="Abort Sequence",
@@ -58,7 +60,7 @@ def run_abort():
             write=[IGNITOR_CMD, DELUGE_CMD, PURGE_CMD, ACTUATOR_CMD],
             read=[IGNITOR_STATE, DELUGE_STATE, PURGE_STATE, ACTUATOR_STATE],
         ) as ctrl:
-            log_event('Abort initiated')
+            log_event('Abort initiated', writer, log_key)
 
             # Mark the start of the sequence
             start = sy.TimeStamp.now()
@@ -80,9 +82,9 @@ def run_abort():
                 lambda c: c[DELUGE_STATE] == DEENERGIZE,
                 timeout=10 * sy.TimeSpan.SECOND, 
             ):
-                log_event("Deluge shutoff sucessfull")
+                log_event("Deluge shutoff sucessfull", writer, log_key)
             else:
-                log_event("Failed to shutoff deugle within timeout")
+                log_event("Failed to shutoff deugle within timeout", writer, log_key)
             
             ctrl[PURGE_CMD] = DEENERGIZE
 
@@ -91,9 +93,9 @@ def run_abort():
                 lambda c: c[PURGE_STATE] == DEENERGIZE,
                 timeout=10 * sy.TimeSpan.SECOND, 
             ):
-                log_event("N2 Purge shutoff sucessfull")
+                log_event("N2 Purge shutoff sucessfull", writer, log_key)
             else:
-                log_event("Failed to shutoff N2 Purge within timeout")
+                log_event("Failed to shutoff N2 Purge within timeout", writer, log_key)
 
             # Mark the end of the sequence
             end = sy.TimeStamp.now()
@@ -104,9 +106,9 @@ def run_abort():
                 time_range=sy.TimeRange(start=start, end=end),
             )
 
-            log_event(f"Abort Sequence completed: {start} to {end}")
+            log_event(f"Abort Sequence completed: {start} to {end}", writer, log_key)
     except Exception as e:
-        log_event(f"Error occurred during sequence execution: {str(e)}")
+        log_event(f"Error occurred during sequence execution: {str(e)}", writer, log_key)
 
 def wait_for_trigger():
     #aquire synnax connection
@@ -118,9 +120,10 @@ def wait_for_trigger():
             password="Bill",
             secure=False,
         )
-        log_event("Connected to Synnax for trigger monitoring")
+        
     except Exception as e:
-        log_event(f"Failed to connect to Synnax system for trigger monitoring: {str(e)}")
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+        print(f"[{timestamp}] {f"Failed to connect to Synnax system for trigger monitoring: {str(e)}"}")
         return
 
     # Check for channels
@@ -173,6 +176,13 @@ def wait_for_trigger():
         retrieve_if_name_exists=True,
     )
 
+    log_channel = client.channels.create(
+        name="BCLS_LOG",
+        data_type="String",
+        virtual=True,
+        retrieve_if_name_exists=True,
+    )
+
     arm_key = arm_channel.key
     abort_key = abort_channel.key
     shutdown_key = shutdown_channel.key
@@ -180,15 +190,17 @@ def wait_for_trigger():
     armed_state_key = armed_state_channel.key
     abort_active_key = abort_active_channel.key
     sequence_active_key = sequence_active_channel.key
+    log_key = log_channel.key
 
     arm_flag = False
     active_flag = True
     shutdown_flag = False
 
     with client.open_streamer([arm_key, abort_key,  shutdown_key]) as streamer, \
-        client.open_writer(start=sy.TimeStamp.now(), channels=[armed_state_key, status_key, abort_active_key, sequence_active_key], enable_auto_commit=True) as writer:
-
-        log_event("Listening for trigger signals")
+        client.open_writer(start=sy.TimeStamp.now(), channels=[armed_state_key, status_key, abort_active_key, sequence_active_key, log_key], enable_auto_commit=True) as writer:
+        
+        log_event("Connected to Synnax for trigger monitoring", writer, log_key)
+        log_event("Listening for trigger signals", writer, log_key)
         writer.write({status_key: [1]})
         for frame in streamer:
             for v in frame[shutdown_key]:
@@ -197,17 +209,17 @@ def wait_for_trigger():
             for v in frame[arm_key]:
                 if v == 1:
                     arm_flag = True
-                    log_event('Abort Armed.')
+                    log_event('Abort Armed.', writer, log_key)
                 elif v == 0:
                     arm_flag = False
-                    log_event('Abort Disarmed.')  
+                    log_event('Abort Disarmed.', writer, log_key)  
             for v in frame[abort_key]:
                 if arm_flag and active_flag and v == 1:
-                    log_event("Trigger received, starting abort sequence")
+                    log_event("Trigger received, starting abort sequence", writer, log_key)
                     writer.write({status_key: [0]})
                     writer.write({abort_active_key: [1]})
                     writer.write({sequence_active_key: [0]})
-                    run_abort()
+                    run_abort(writer, log_key)
                     writer.write({status_key: [1]})
                     writer.write({abort_active_key: [0]})
                      
@@ -217,7 +229,7 @@ def wait_for_trigger():
             if shutdown_flag:
                 writer.write({status_key: [0]})
                 writer.write({armed_state_key: [0]})
-                log_event('Shutting down abort')
+                log_event('Shutting down abort', writer, log_key)
                 break
 
 if __name__ == "__main__":
