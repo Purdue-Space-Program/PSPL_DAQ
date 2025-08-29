@@ -3,6 +3,7 @@ from datetime import datetime
 
 ENERGIZE = 0
 DEENERGIZE = 1
+import time
 
 def log_event(message, writer, log_key):
     """Log events with timestamps."""
@@ -48,14 +49,14 @@ def read_data():
     )
 
     valve_test_state_channel = client.channels.create(
-        name="PV-OX-03_state",
+        name="PV-ETH-INLET_cmd",
         data_type="uint8",
-        virtual=False,
+        virtual=True,
         retrieve_if_name_exists=True,
     )
 
     valve_test_cmd_channel = client.channels.create(
-        name="PV-OX-03_cmd",
+        name="SV-N2-TANK-VENT_cmd",
         data_type="uint8",
         virtual=False,
         retrieve_if_name_exists=True,
@@ -68,9 +69,10 @@ def read_data():
     valve_cmd_key = valve_test_cmd_channel.key
 
     shutdown_flag = False
+    open_flag = False
 
-    with client.open_streamer([pt_test_key, shutdown_key, valve_state_key, valve_cmd_key]) as streamer, \
-        client.open_writer(start=sy.TimeStamp.now(), channels=[log_key], enable_auto_commit=True) as writer:
+    with client.open_streamer([pt_test_key, shutdown_key, valve_cmd_key]) as streamer, \
+        client.open_writer(start=sy.TimeStamp.now(), channels=[log_key, valve_state_key], enable_auto_commit=True) as writer:
         
         log_event("Connected to Synnax for trigger monitoring", writer, log_key)
         log_event("Listening for trigger signals", writer, log_key)
@@ -80,16 +82,20 @@ def read_data():
             for v in frame[pt_test_key]:
                 log_event(v, writer, log_key)
             '''
-            for v in frame[valve_state_key]:
-                log_event(f"state: {v}", writer, log_key)
             for v in frame[valve_cmd_key]:
                 log_event(f"cmd: {v}", writer, log_key)
+                if v == 1:
+                    open_flag = True
+                else:
+                    open_flag = False
             for v in frame[shutdown_key]:
                 if v == 1:
                     shutdown_flag = True
+            writer.write({valve_state_key: [1 if open_flag else 0]})
             if shutdown_flag:
                 log_event('Shutting down test script', writer, log_key)
-                break    
+                break  
+
 
 if __name__ == "__main__":
     read_data()    

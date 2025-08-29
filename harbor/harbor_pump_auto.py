@@ -1,9 +1,5 @@
 import synnax as sy # type: ignore
 from datetime import datetime
-import sys
-import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'PSPL_CMS_AVIONICS_COTS_FSW', 'tools')))
-import command as cmd  # type: ignore
 
 ENERGIZE = 0
 DEENERGIZE = 1
@@ -18,7 +14,7 @@ def log_event(message, writer, log_key):
     writer.write({log_key: [fullMessage]})
 
 # Main autosequence
-def run_sequence(writer, log_key, test_duration_setpoint, pump_outlet_setpoint, run_regulate_key, close_regulate_key):
+def run_sequence(writer, log_key, test_duration_setpoint, pump_outlet_setpoint, run_regulate_key, close_regulate_key, eth_inlet_cmd_key, eth_outlet_cmd_key):
     # Connect to the Synnax system
     try:
         client = sy.Synnax(
@@ -46,93 +42,112 @@ def run_sequence(writer, log_key, test_duration_setpoint, pump_outlet_setpoint, 
             write=[INLET_CMD, OUTLET_CMD],
             read=[INLET_STATE, OUTLET_STATE],
         ) as ctrl:
-            log_event('Autosequence initiated', writer, log_key)
+            with client.open_writer(start=sy.TimeStamp.now(), channels=[run_regulate_key, close_regulate_key, eth_inlet_cmd_key, eth_outlet_cmd_key], enable_auto_commit=True) as writer2:
+                log_event('Autosequence initiated', writer, log_key)
 
-            # Mark the start of the sequence
-            start = sy.TimeStamp.now()
+                # Mark the start of the sequence
+                start = sy.TimeStamp.now()
 
-            #activate regulator
-            writer.write({run_regulate_key: [1]})
-            ctrl.sleep(2)
+                #activate regulator
+                writer2.write({run_regulate_key: [1]})
+                ctrl.sleep(2)
 
-            #prime pump
-            ctrl[INLET_CMD] = ENERGIZE
-
-            # Wait until the Inlet is opened
-            if ctrl.wait_until(
-                lambda c: c[INLET_STATE] == ENERGIZE,
-                timeout= 1 * sy.TimeSpan.SECOND, 
-            ):
+                #prime pump
+                writer2.write({eth_inlet_cmd_key: [1]})
                 log_event("Inlet opened sucessfully.", writer, log_key)
-            else:
-                log_event("Failed to open inlet.", writer, log_key)
             
+                '''
+                ctrl[INLET_CMD] = ENERGIZE
 
-            #wait for pump to prime
-            ctrl.sleep(5)
-            log_event("Pump is primed, proceeding with test.", writer, log_key)
+                # Wait until the Inlet is opened
+                if ctrl.wait_until(
+                    lambda c: c[INLET_STATE] == ENERGIZE,
+                    timeout= 1 * sy.TimeSpan.SECOND, 
+                ):
+                    log_event("Inlet opened sucessfully.", writer, log_key)
+                else:
+                    log_event("Failed to open inlet.", writer, log_key)
+                    break
+                '''
 
-            #start pump
-            #add command to start pump with [pump_outlet_setpoint]
-            #Shutoff Outlet
+                log_event("Priming pump.", writer, log_key)
 
-            #open run line
-            ctrl[OUTLET_CMD] = ENERGIZE
+                #wait for pump to prime
+                ctrl.sleep(5)
+                log_event("Pump is primed, proceeding with test.", writer, log_key)
 
-            # Wait until the run line is open
-            if ctrl.wait_until(
-                lambda c: c[OUTLET_STATE] == ENERGIZE,
-                timeout= 1 * sy.TimeSpan.SECOND, 
-            ):
-                log_event("Outlet closed sucessfully.", writer, log_key)
-            else:
-                log_event("Failed to close outlet.", writer, log_key)
+                #start pump
+                #add command to start pump with [pump_outlet_setpoint]
 
-            ctrl.sleep(5)
+                #open run line
+                writer2.write({eth_outlet_cmd_key: [1]})
+                log_event("Outlet opened sucessfully.", writer, log_key)
+                '''
+                ctrl[OUTLET_CMD] = ENERGIZE
 
-            #wait for test to run
-            ctrl.sleep(test_duration_setpoint)
+                # Wait until the run line is open
+                if ctrl.wait_until(
+                    lambda c: c[OUTLET_STATE] == ENERGIZE,
+                    timeout= 1 * sy.TimeSpan.SECOND, 
+                ):
+                    log_event("Outlet opened sucessfully.", writer, log_key)
+                else:
+                    log_event("Failed to open outlet.", writer, log_key)
+                    break
+                '''
 
-            #stop pump
-            #add command to shut down pump
+                #wait for test to run
+                ctrl.sleep(float(test_duration_setpoint))
 
-            #close reg
-            writer.write({close_regulate_key: [1]})
+                #stop pump
+                #add command to shut down pump
 
-            #Shutoff inlet
-            ctrl[INLET_CMD] = DEENERGIZE
+                #close reg
+                writer2.write({close_regulate_key: [1]})
 
-            # Wait until the Inlet is shutoff
-            if ctrl.wait_until(
-                lambda c: c[INLET_STATE] == DEENERGIZE,
-                timeout= 1 * sy.TimeSpan.SECOND, 
-            ):
+                #Shutoff inlet
+                writer2.write({eth_inlet_cmd_key: [0]})
                 log_event("Inlet closed sucessfully.", writer, log_key)
-            else:
-                log_event("Failed to close inlet.", writer, log_key)
-            
-            #Shutoff Outlet
-            ctrl[OUTLET_CMD] = DEENERGIZE
+                '''
+                ctrl[INLET_CMD] = DEENERGIZE
 
-            # Wait until the Inlet is shutoff
-            if ctrl.wait_until(
-                lambda c: c[OUTLET_STATE] == DEENERGIZE,
-                timeout= 1 * sy.TimeSpan.SECOND, 
-            ):
+                # Wait until the Inlet is shutoff
+                if ctrl.wait_until(
+                    lambda c: c[INLET_STATE] == DEENERGIZE,
+                    timeout= 1 * sy.TimeSpan.SECOND, 
+                ):
+                    log_event("Inlet closed sucessfully.", writer, log_key)
+                else:
+                    log_event("Failed to close inlet.", writer, log_key)
+                    break
+                '''
+
+                #Shutoff Outlet
+                writer2.write({eth_outlet_cmd_key: [0]})
                 log_event("Outlet closed sucessfully.", writer, log_key)
-            else:
-                log_event("Failed to close outlet.", writer, log_key)
+                '''
+                ctrl[OUTLET_CMD] = DEENERGIZE
 
-            # Mark the end of the sequence
-            end = sy.TimeStamp.now()
+                # Wait until the Inlet is shutoff
+                if ctrl.wait_until(
+                    lambda c: c[OUTLET_STATE] == DEENERGIZE,
+                    timeout= 1 * sy.TimeSpan.SECOND, 
+                ):
+                    log_event("Outlet closed sucessfully.", writer, log_key)
+                else:
+                    log_event("Failed to close outlet.", writer, log_key)
+                    break
+                '''
+                # Mark the end of the sequence
+                end = sy.TimeStamp.now()
 
-            # Label the sequence with the end time
-            client.ranges.create(
-                name=f"Abort Sequence {end}",
-                time_range=sy.TimeRange(start=start, end=end),
-            )
+                # Label the sequence with the end time
+                client.ranges.create(
+                    name=f"Abort Sequence {end}",
+                    time_range=sy.TimeRange(start=start, end=end),
+                )
 
-            log_event(f"Abort Sequence completed: {start} to {end}", writer, log_key)
+                log_event(f"Pump Test Autosequence completed: {start} to {end}", writer, log_key)
     except Exception as e:
         log_event(f"Error occurred during sequence execution: {str(e)}", writer, log_key)
 
@@ -271,6 +286,20 @@ def wait_for_trigger():
         retrieve_if_name_exists=True,
     )
 
+    eth_outlet_cmd_channel = client.channels.create(
+        name="PV-ETH-OUTLET_cmd",
+        data_type="uint8",
+        virtual=True,
+        retrieve_if_name_exists=True,
+    )
+
+    eth_inlet_cmd_channel = client.channels.create(
+        name="PV-ETH-INLET_cmd",
+        data_type="uint8",
+        virtual=True,
+        retrieve_if_name_exists=True,
+    )
+
     arm_key = arm_channel.key
     run_key = run_channel.key
     reset_key = reset_channel.key
@@ -288,6 +317,8 @@ def wait_for_trigger():
     test_duration_setpoint_key = test_duration_setpoint_channel.key
     run_regulate_key = run_regulate_channel.key
     close_regulate_key = close_regulate_channel.key
+    eth_outlet_cmd_key = eth_outlet_cmd_channel.key
+    eth_inlet_cmd_key = eth_inlet_cmd_channel.key
 
     arm_flag = False
     arm_abort_flag = False
@@ -300,7 +331,7 @@ def wait_for_trigger():
     test_duration_setpoint = 0
 
     with client.open_streamer([arm_key, run_key, reset_key, total_shutdown_key, single_shutdown_key, arm_abort_key, seal_pressure_redline_key, motor_thermal_redline_key, pump_outlet_setpoint_key, test_duration_setpoint_key]) as streamer, \
-        client.open_writer(start=sy.TimeStamp.now(), channels=[armed_state_key, status_key, sequence_active_key, pump_parameters_state_key, log_key, run_regulate_key, close_regulate_key], enable_auto_commit=True) as writer:
+        client.open_writer(start=sy.TimeStamp.now(), channels=[armed_state_key, status_key, sequence_active_key, pump_parameters_state_key, log_key], enable_auto_commit=True) as writer:
         
         log_event("Connected to Synnax for trigger monitoring", writer, log_key)
         log_event("Listening for trigger signals", writer, log_key)
@@ -317,10 +348,10 @@ def wait_for_trigger():
                 if v == 1:
                     shutdown_flag = True
             for v in frame[arm_key]:
-                if v == 1:
+                if v == 1 and pump_parameter_flag and active_flag:
                     arm_flag = True
                     log_event('Autosequence armed', writer, log_key)
-                elif v == 0:
+                elif v == 0 and pump_parameter_flag and active_flag:
                     arm_flag = False
                     log_event('Autosequence disarmed', writer, log_key) 
             for v in frame[arm_abort_key]:
@@ -343,14 +374,15 @@ def wait_for_trigger():
                     test_duration_setpoint = v
                     log_event(f"Test duration setpoint set to {test_duration_setpoint} seconds", writer, log_key)  
             for v in frame[run_key]:
-                if arm_flag and active_flag and arm_abort_flag and pump_parameter_flag and v == 1:
+                if arm_flag and active_flag and arm_abort_flag and v == 1:
+                    print(test_duration_setpoint)
                     log_event("Trigger received, starting Autosequence", writer, log_key)
                     writer.write({armed_state_key: [0]})
                     writer.write({status_key: [0]})
                     writer.write({sequence_active_key: [1]})
                     active_flag = False 
                     arm_flag = False
-                    run_sequence(writer, log_key, test_duration_setpoint, pump_outlet_setpoint, run_regulate_key, close_regulate_key)
+                    run_sequence(writer, log_key, test_duration_setpoint, pump_outlet_setpoint, run_regulate_key, close_regulate_key, eth_inlet_cmd_key, eth_outlet_cmd_key)
                     writer.write({sequence_active_key: [0]})
 
             if seal_pressure_redline != 0 and motor_thermal_redline != 0 and pump_outlet_setpoint != 0 and test_duration_setpoint != 0:

@@ -12,7 +12,7 @@ def log_event(message, writer, log_key):
     writer.write({log_key: [fullMessage]})
 
 # Abort sequence
-def run_abort(writer, log_key, close_regulate_key):
+def run_abort(writer, log_key, close_regulate_key, eth_inlet_cmd_key, eth_outlet_cmd_key):
     # Connect to the Synnax system
     try:
         client = sy.Synnax(
@@ -40,54 +40,64 @@ def run_abort(writer, log_key, close_regulate_key):
             write=[INLET_CMD, OUTLET_CMD],
             read=[INLET_STATE, OUTLET_STATE],
         ) as ctrl:
-            log_event('Abort initiated', writer, log_key)
+            with client.open_writer(start=sy.TimeStamp.now(), channels=[close_regulate_key, eth_inlet_cmd_key, eth_outlet_cmd_key], enable_auto_commit=True) as writer2:
+                log_event('Abort initiated', writer, log_key)
 
-            # Mark the start of the sequence
-            start = sy.TimeStamp.now()
+                # Mark the start of the sequence
+                start = sy.TimeStamp.now()
 
-            #close regulator
-            writer.write({close_regulate_key: [1]})
+                #close regulator
+                writer2.write({close_regulate_key: [1]})
+                
+                #Add commands to shutdown pump and cut power
+                #
+                #
 
-            #Add commands to shutdown pump and cut power
-            #
-            #
-
-            #Shutoff inlet
-            ctrl[INLET_CMD] = DEENERGIZE
-
-            # Wait until the Inlet is shutoff
-            if ctrl.wait_until(
-                lambda c: c[INLET_STATE] == DEENERGIZE,
-                timeout= 1 * sy.TimeSpan.SECOND, 
-            ):
+                #Shutoff inlet
+                writer2.write({eth_inlet_cmd_key: [0]})
                 log_event("Inlet closed sucessfully.", writer, log_key)
-            else:
-                log_event("Failed to close inlet.", writer, log_key)
-            
-            #Shutoff Outlet
-            ctrl[OUTLET_CMD] = DEENERGIZE
 
-            # Wait until the Inlet is shutoff
-            if ctrl.wait_until(
-                lambda c: c[OUTLET_STATE] == DEENERGIZE,
-                timeout= 1 * sy.TimeSpan.SECOND, 
-            ):
+                '''
+                ctrl[INLET_CMD] = DEENERGIZE
+
+                # Wait until the Inlet is shutoff
+                if ctrl.wait_until(
+                    lambda c: c[INLET_STATE] == DEENERGIZE,
+                    timeout= 1 * sy.TimeSpan.SECOND, 
+                ):
+                    log_event("Inlet closed sucessfully.", writer, log_key)
+                else:
+                    log_event("Failed to close inlet.", writer, log_key)
+                '''
+
+                #Shutoff Outlet
+                writer2.write({eth_outlet_cmd_key: [0]})
                 log_event("Outlet closed sucessfully.", writer, log_key)
-            else:
-                log_event("Failed to close outlet.", writer, log_key)
 
-            ctrl.sleep(5)
+                '''
+                ctrl[OUTLET_CMD] = DEENERGIZE
 
-            # Mark the end of the sequence
-            end = sy.TimeStamp.now()
+                # Wait until the Inlet is shutoff
+                if ctrl.wait_until(
+                    lambda c: c[OUTLET_STATE] == DEENERGIZE,
+                    timeout= 1 * sy.TimeSpan.SECOND, 
+                ):
+                    log_event("Outlet closed sucessfully.", writer, log_key)
+                else:
+                    log_event("Failed to close outlet.", writer, log_key)
+                '''
+                ctrl.sleep(10)
 
-            # Label the sequence with the end time
-            client.ranges.create(
-                name=f"Abort Sequence {end}",
-                time_range=sy.TimeRange(start=start, end=end),
-            )
+                # Mark the end of the sequence
+                end = sy.TimeStamp.now()
 
-            log_event(f"Abort Sequence completed: {start} to {end}", writer, log_key)
+                # Label the sequence with the end time
+                client.ranges.create(
+                    name=f"Abort Sequence {end}",
+                    time_range=sy.TimeRange(start=start, end=end),
+                )
+
+                log_event(f"Abort Sequence completed: {start} to {end}", writer, log_key)
     except Exception as e:
         log_event(f"Error occurred during sequence execution: {str(e)}", writer, log_key)
 
@@ -206,6 +216,20 @@ def wait_for_trigger():
         retrieve_if_name_exists=True,
     )
 
+    eth_outlet_cmd_channel = client.channels.create(
+        name="PV-ETH-OUTLET_cmd",
+        data_type="uint8",
+        virtual=True,
+        retrieve_if_name_exists=True,
+    )
+
+    eth_inlet_cmd_channel = client.channels.create(
+        name="PV-ETH-INLET_cmd",
+        data_type="uint8",
+        virtual=True,
+        retrieve_if_name_exists=True,
+    )
+
     arm_key = arm_channel.key
     abort_key = abort_channel.key
     single_shutdown_key = single_shutdown_channel.key
@@ -220,6 +244,8 @@ def wait_for_trigger():
     pt_eth_seal_key = pt_eth_seal_channel.key
     tc_pump_motor_key = tc_pump_motor_channel.key
     close_regulate_key = close_regulate_channel.key
+    eth_outlet_cmd_key = eth_outlet_cmd_channel.key
+    eth_inlet_cmd_key = eth_inlet_cmd_channel.key
 
     arm_flag = False
     active_flag = True
@@ -228,7 +254,7 @@ def wait_for_trigger():
     motor_thermal_redline = 0
 
     with client.open_streamer([arm_key, abort_key,  single_shutdown_key, total_shutdown_key, seal_pressure_redline_key, motor_thermal_redline_key, pt_eth_seal_key, tc_pump_motor_key]) as streamer, \
-        client.open_writer(start=sy.TimeStamp.now(), channels=[armed_state_key, status_key, abort_active_key, sequence_active_key, log_key, close_regulate_key], enable_auto_commit=True) as writer:
+        client.open_writer(start=sy.TimeStamp.now(), channels=[armed_state_key, status_key, abort_active_key, sequence_active_key, log_key], enable_auto_commit=True) as writer:
         
         log_event("Connected to Synnax for trigger monitoring", writer, log_key)
         log_event("Listening for trigger signals", writer, log_key)
@@ -262,7 +288,7 @@ def wait_for_trigger():
                         writer.write({status_key: [0]})
                         writer.write({abort_active_key: [1]})
                         writer.write({sequence_active_key: [0]})
-                        run_abort(writer, log_key, close_regulate_key)
+                        run_abort(writer, log_key, close_regulate_key, eth_inlet_cmd_key, eth_outlet_cmd_key)
                         writer.write({status_key: [1]})
                         writer.write({abort_active_key: [0]})
             for v in frame[tc_pump_motor_key]:
@@ -272,7 +298,7 @@ def wait_for_trigger():
                         writer.write({status_key: [0]})
                         writer.write({abort_active_key: [1]})
                         writer.write({sequence_active_key: [0]})
-                        run_abort(writer, log_key, close_regulate_key)
+                        run_abort(writer, log_key, close_regulate_key, eth_inlet_cmd_key, eth_outlet_cmd_key)
                         writer.write({status_key: [1]})
                         writer.write({abort_active_key: [0]})
             for v in frame[abort_key]:
@@ -281,7 +307,7 @@ def wait_for_trigger():
                     writer.write({status_key: [0]})
                     writer.write({abort_active_key: [1]})
                     writer.write({sequence_active_key: [0]})
-                    run_abort(writer, log_key, close_regulate_key)
+                    run_abort(writer, log_key, close_regulate_key, eth_inlet_cmd_key, eth_outlet_cmd_key)
                     writer.write({status_key: [1]})
                     writer.write({abort_active_key: [0]})
                      
