@@ -4,7 +4,7 @@ from datetime import datetime
 ENERGIZE = 0
 DEENERGIZE = 1
 
-pop_timing = 0.25 #time valves are active for is seconds
+pop_timing = 1.5 #time valves are active for is seconds
 
 #event logging function
 def log_event(message, writer, log_key):
