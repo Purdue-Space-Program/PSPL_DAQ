@@ -25,8 +25,8 @@ def run_sequence(writer, log_key):
     # Connect to the Synnax system
     try:
         client = sy.Synnax(
-            host="128.46.118.59",
-            port=9090,
+            host="10.165.89.106",
+            port=2701,
             username="Bill",
             password="Bill",
             secure=False,  # Ensure secure is set to False unless your system requires it
@@ -216,8 +216,8 @@ def wait_for_trigger():
     #aquire synnax connection
     try:
         client = sy.Synnax(
-            host="128.46.118.59",
-            port=9090,
+            host="10.165.89.106",
+            port=2701,
             username="Bill",
             password="Bill",
             secure=False,
