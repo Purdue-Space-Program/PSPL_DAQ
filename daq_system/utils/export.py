@@ -57,8 +57,8 @@ def main(channel_range: str):
                             output_df[name] = pd.Series(b.read()).reset_index(drop=True)
 
     print(output_df)
-    output_df.to_csv("data_export.csv")
+    output_df.to_csv(f"datadump_{range}.csv")
 
 if __name__ == '__main__':
-    range = input('Range(s) you wish to export: ')
+    range = input('Range you wish to export: ')
     main(range)
