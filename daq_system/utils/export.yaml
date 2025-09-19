@@ -1,4 +1,29 @@
+range: 9-19-coldflow
 channels:
-  - RTD-OX
   - RTD-FU
+  - RTD-OX
+  - PT-N2-01
+  - TC-HE-201
+  - PT-HE-01
+  - PT-OX-02
+  - PT-FU-02
+  - PT-OX-04
+  - PT-FU-04
+  - TC-OX-02
+  - TC-FU-02
+  - TC-OX-04
+  - TC-FU-04
+  - PI-HE-01
+  - PI-OX-02
+  - PI-OX-03
+  - PI-FU-02
   - PI-FU-03
+  - REED-N2-02
+  - REED-BP-01
+  - PT-HE-201
+  - PT-OX-201
+  - PT-FU-201
+  - SV-HE-201-position
+  - SV-HE-201-state
+  - SV-HE-202-position
+  - SV-HE-202-state
