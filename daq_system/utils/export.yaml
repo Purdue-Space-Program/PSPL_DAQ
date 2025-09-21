@@ -1,4 +1,4 @@
-range: 9-19-coldflow
+range: "Full Duration Cold Flow 9-20"
 channels:
   - RTD-FU
   - RTD-OX

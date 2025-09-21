@@ -8,7 +8,7 @@ import command as cmd  # type: ignore
 ENERGIZE = 0
 DEENERGIZE = 1
 
-onboard_active = False
+onboard_active = True
 
 
 def log_event(message, writer, log_key):
@@ -291,6 +291,13 @@ def wait_for_trigger():
         retrieve_if_name_exists=True,
     )
 
+    ping_channel = client.channels.create(
+        name="PING",
+        data_type="uint8",
+        virtual=True,
+        retrieve_if_name_exists=True,
+    )
+
     arm_key = arm_channel.key
     run_key = run_channel.key
     reset_key = reset_channel.key
@@ -300,13 +307,14 @@ def wait_for_trigger():
     arm_abort_key = arm_abort_channel.key
     sequence_active_key = sequence_active_channel.key
     log_key = log_channel.key
+    ping_key = ping_channel.key
 
     arm_flag = False
     arm_abort_flag = False
     active_flag = True
     shutdown_flag = False
 
-    with client.open_streamer([arm_key, run_key, reset_key, shutdown_key, arm_abort_key]) as streamer, \
+    with client.open_streamer([arm_key, run_key, reset_key, shutdown_key, arm_abort_key, ping_key]) as streamer, \
         client.open_writer(start=sy.TimeStamp.now(), channels=[armed_state_key, status_key, sequence_active_key, log_key], enable_auto_commit=True) as writer:
         
         log_event("Connected to Synnax for trigger monitoring", writer, log_key)
@@ -342,6 +350,9 @@ def wait_for_trigger():
                     arm_flag = False
                     run_sequence(writer, log_key)
                     writer.write({sequence_active_key: [0]})
+            for v in frame[ping_key]:
+                if v == 1:
+                    log_event("Pong", writer, log_key)
                      
             writer.write({armed_state_key: [1 if arm_flag else 0]})
             writer.write({status_key: [1 if active_flag else 0]})
