@@ -204,6 +204,20 @@ def wait_for_trigger():
         retrieve_if_name_exists=True,
     )
 
+    clock_reset_channel = client.channels.create(
+        name="SET_TIME",
+        data_type="uint8",
+        virtual=True,
+        retrieve_if_name_exists=True,
+    )
+
+    clock_stop_channel = client.channels.create(
+        name="STOP_CLOCK",
+        data_type="uint8",
+        virtual=True,
+        retrieve_if_name_exists=True,
+    )
+
     arm_key = arm_channel.key
     abort_key = abort_channel.key
     shutdown_key = shutdown_channel.key
@@ -215,13 +229,15 @@ def wait_for_trigger():
     ox_redline_key = ox_redline_channel.key
     log_key = log_channel.key
     ping_key = ping_channel.key
+    clock_reset_key = clock_reset_channel.key
+    stop_clock_key = clock_stop_channel.key
 
     arm_flag = False
     active_flag = True
     shutdown_flag = False
 
     with client.open_streamer([arm_key, abort_key,  shutdown_key, ping_key, fu_redline_key, ox_redline_key]) as streamer, \
-        client.open_writer(start=sy.TimeStamp.now(), channels=[armed_state_key, status_key, abort_active_key, sequence_active_key, log_key], enable_auto_commit=True) as writer:
+        client.open_writer(start=sy.TimeStamp.now(), channels=[armed_state_key, status_key, abort_active_key, sequence_active_key, log_key, clock_reset_key, stop_clock_key], enable_auto_commit=True) as writer:
         
         log_event("Connected to Synnax for trigger monitoring", writer, log_key)
         log_event("Listening for trigger signals", writer, log_key)
@@ -241,29 +257,37 @@ def wait_for_trigger():
                 if v == 1:
                     log_event("Fu upper pressure redline hit, starting abort sequence", writer, log_key)
                     writer.write({status_key: [0]})
+                    writer.write({stop_clock_key: [1]})
                     writer.write({abort_active_key: [1]})
                     writer.write({sequence_active_key: [0]})
                     run_abort(writer, log_key)
                     writer.write({status_key: [1]})
                     writer.write({abort_active_key: [0]})
+                    writer.write({clock_reset_key: ["45:00:00"]})
+
             for v in frame [ox_redline_key]:
                 if v == 1:
                     log_event("Ox upper pressure redline hit, starting abort sequence", writer, log_key)
                     writer.write({status_key: [0]})
+                    writer.write({stop_clock_key: [1]})
                     writer.write({abort_active_key: [1]})
                     writer.write({sequence_active_key: [0]})
                     run_abort(writer, log_key)
                     writer.write({status_key: [1]})
                     writer.write({abort_active_key: [0]})
+                    writer.write({clock_reset_key: ["45:00:00"]})
+
             for v in frame[abort_key]:
                 if arm_flag and active_flag and v == 1:
                     log_event("Trigger received, starting abort sequence", writer, log_key)
                     writer.write({status_key: [0]})
+                    writer.write({stop_clock_key: [1]})
                     writer.write({abort_active_key: [1]})
                     writer.write({sequence_active_key: [0]})
                     run_abort(writer, log_key)
                     writer.write({status_key: [1]})
                     writer.write({abort_active_key: [0]})
+                    writer.write({clock_reset_key: ["45:00:00"]})
             for v in frame[ping_key]:
                 if v == 1:
                     log_event('Pong', writer, log_key)

@@ -91,9 +91,9 @@ class DAQSystem:
 
             # Try to retrieve both devices
             device_5 = self.client.hardware.devices.retrieve(location="Dev5")
-            #device_6 = self.client.hardware.devices.retrieve(location="Dev6")
+            device_6 = self.client.hardware.devices.retrieve(location="Dev6")
 
-            devices = [device_5]
+            devices = [device_5, device_6]
             found_devices = [d for d in devices if d is not None]
 
             if not found_devices:
