@@ -20,7 +20,7 @@ def log_event(message, writer, log_key):
 
 
 # Main autosequence
-def run_sequence(writer, log_key):
+def run_sequence(writer, log_key, fu_lower_redline, ox_lower_redline):
     """Execute the Hot Fire Auto Sequence with control logic."""
     # Connect to the Synnax system
     try:
@@ -50,22 +50,48 @@ def run_sequence(writer, log_key):
     ACTUATOR_STATE = "ACTUATOR_state"
 
     log_event("Starting Hot Fire Auto Sequence", writer, log_key)
-    if onboard_active:
-        cmd.send_command("start")
-        log_event("Start command sent to Rocketside system", writer, log_key)
-
+    
     try:
         # Open a control sequence under a context manager, so control is released when done
         with client.control.acquire(
             name="Hot Fire Auto Sequence",
             write=[IGNITOR_CMD, DELUGE_CMD, PURGE_CMD, ACTUATOR_CMD],
-            read=[IGNITOR_STATE, DELUGE_STATE, PURGE_STATE, ACTUATOR_STATE],
+            read=[IGNITOR_STATE, DELUGE_STATE, PURGE_STATE, ACTUATOR_STATE, 'PT-FU-201', 'PT-OX-201'],
             write_authorities=[200],  # Set high authority to prevent interference
         ) as ctrl:
             log_event("Control sequence acquired", writer, log_key)
 
             # Mark the start of the sequence
             start = sy.TimeStamp.now()
+
+            # Regulate BBs
+            cmd.send_command("SET_OX_STATE_REGULATE")
+            cmd.send_command("SET_FU_STATE_REGULATE")
+
+            #wait for fuel tank to prepress
+            if ctrl.wait_until(
+                lambda c: c['PT-FU-201'] > fu_lower_redline,
+                timeout=5 * sy.TimeSpan.SECOND,
+            ):
+                log_event("Fuel tank reached prepress pressure sucessfully", writer, log_key)
+            else:
+                log_event("Fuel tank failed to prepress, aborting", writer, log_key)
+                return
+            
+            #wait for ox tank to prepress
+            if ctrl.wait_until(
+                lambda c: c['PT-OX-201'] > ox_lower_redline,
+                timeout=5 * sy.TimeSpan.SECOND,
+            ):
+                log_event("Ox tank reached prepress pressure sucessfully", writer, log_key)
+            else:
+                log_event("Ox tank failed to prepress, aborting", writer, log_key)
+                return
+
+            #start onboard sequence
+            if onboard_active:
+                cmd.send_command("start")
+                log_event("Start command sent to Rocketside system", writer, log_key)
 
             # Start the N2 purge at T-5
             log_event("Activating N2-Purge", writer, log_key)
