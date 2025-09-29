@@ -20,6 +20,18 @@ def main():
         index=clock_index.key,
         retrieve_if_name_exists=True,
     )
+    clock_sec = client.channels.create(
+        name='T_CLOCK_SEC',
+        data_type='int64',
+        index=clock_index.key,
+        retrieve_if_name_exists=True,
+    )
+    clock_min = client.channels.create(
+        name='T_CLOCK_MIN',
+        data_type='int64',
+        index=clock_index.key,
+        retrieve_if_name_exists=True,
+    )
     clock_string = client.channels.create(
         name='T_CLOCK_STRING',
         data_type='string',
@@ -69,6 +81,8 @@ def main():
 
     output_channels = [
         clock.key,
+        clock_sec.key,
+        clock_min.key,
         clock_string.key,
         clock_index.key,
         clock_enable.key,
@@ -134,6 +148,8 @@ def main():
 
             writer.write({
                 clock: t_clock.milliseconds,
+                clock_sec: seconds,
+                clock_min: minutes,
                 clock_index: sy.TimeStamp.now(),
                 clock_enable: int(clock_running),
                 clock_enable_index: sy.TimeStamp.now(),
