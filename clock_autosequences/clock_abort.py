@@ -50,6 +50,8 @@ def run_abort(writer, log_key):
         ACTUATOR_CMD = "ACTUATOR_cmd"
         ACTUATOR_STATE = "ACTUATOR_state"
 
+        STOP_CLOCK = "SET_T_CLOCK_ENABLE"
+
         if onboard_active:
             cmd.send_command("abort")
             log_event("Start command sent to Rocketside system", writer, log_key)
@@ -57,13 +59,15 @@ def run_abort(writer, log_key):
         with client.control.acquire(
             name="Abort Sequence",
             write_authorities=[230],
-            write=[IGNITOR_CMD, DELUGE_CMD, PURGE_CMD, ACTUATOR_CMD],
+            write=[IGNITOR_CMD, DELUGE_CMD, PURGE_CMD, ACTUATOR_CMD, STOP_CLOCK],
             read=[IGNITOR_STATE, DELUGE_STATE, PURGE_STATE, ACTUATOR_STATE],
         ) as ctrl:
             log_event('Abort initiated', writer, log_key)
 
             # Mark the start of the sequence
             start = sy.TimeStamp.now()
+
+            ctrl[STOP_CLOCK] = 0
 
             ctrl[DELUGE_CMD] = ENERGIZE
             ctrl[PURGE_CMD] = ENERGIZE
@@ -190,9 +194,9 @@ def wait_for_trigger():
         retrieve_if_name_exists=True,
     )
 
-    ping_channel = client.channels.create(
-        name="PING",
-        data_type="uint8",
+    status_log_channel = client.channels.create(
+        name="STATUS_LOG",
+        data_type="String",
         virtual=True,
         retrieve_if_name_exists=True,
     )
@@ -204,16 +208,9 @@ def wait_for_trigger():
         retrieve_if_name_exists=True,
     )
 
-    clock_reset_channel = client.channels.create(
-        name="SET_TIME",
-        data_type="uint8",
-        virtual=True,
-        retrieve_if_name_exists=True,
-    )
-
-    clock_stop_channel = client.channels.create(
-        name="STOP_CLOCK",
-        data_type="uint8",
+    t_clock_channel = client.channels.create(
+        name="T_CLOCK_MS",
+        data_type="int64",
         virtual=True,
         retrieve_if_name_exists=True,
     )
@@ -228,16 +225,15 @@ def wait_for_trigger():
     fu_redline_key = fu_redline_channel.key
     ox_redline_key = ox_redline_channel.key
     log_key = log_channel.key
-    ping_key = ping_channel.key
-    clock_reset_key = clock_reset_channel.key
-    stop_clock_key = clock_stop_channel.key
+    t_clock_key = t_clock_channel.key
+    status_log_key = status_log_channel.key
 
     arm_flag = False
     active_flag = True
     shutdown_flag = False
 
-    with client.open_streamer([arm_key, abort_key,  shutdown_key, ping_key, fu_redline_key, ox_redline_key]) as streamer, \
-        client.open_writer(start=sy.TimeStamp.now(), channels=[armed_state_key, status_key, abort_active_key, sequence_active_key, log_key, clock_reset_key, stop_clock_key], enable_auto_commit=True) as writer:
+    with client.open_streamer([arm_key, abort_key,  shutdown_key, fu_redline_key, ox_redline_key, t_clock_key]) as streamer, \
+        client.open_writer(start=sy.TimeStamp.now(), channels=[armed_state_key, status_key, abort_active_key, sequence_active_key, log_key, status_log_key], enable_auto_commit=True) as writer:
         
         log_event("Connected to Synnax for trigger monitoring", writer, log_key)
         log_event("Listening for trigger signals", writer, log_key)
@@ -257,41 +253,36 @@ def wait_for_trigger():
                 if v == 1:
                     log_event("Fu upper pressure redline hit, starting abort sequence", writer, log_key)
                     writer.write({status_key: [0]})
-                    writer.write({stop_clock_key: [1]})
                     writer.write({abort_active_key: [1]})
                     writer.write({sequence_active_key: [0]})
                     run_abort(writer, log_key)
                     writer.write({status_key: [1]})
                     writer.write({abort_active_key: [0]})
-                    writer.write({clock_reset_key: ["45:00:00"]})
 
             for v in frame [ox_redline_key]:
                 if v == 1:
                     log_event("Ox upper pressure redline hit, starting abort sequence", writer, log_key)
                     writer.write({status_key: [0]})
-                    writer.write({stop_clock_key: [1]})
                     writer.write({abort_active_key: [1]})
                     writer.write({sequence_active_key: [0]})
                     run_abort(writer, log_key)
                     writer.write({status_key: [1]})
                     writer.write({abort_active_key: [0]})
-                    writer.write({clock_reset_key: ["45:00:00"]})
 
             for v in frame[abort_key]:
                 if arm_flag and active_flag and v == 1:
                     log_event("Trigger received, starting abort sequence", writer, log_key)
                     writer.write({status_key: [0]})
-                    writer.write({stop_clock_key: [1]})
                     writer.write({abort_active_key: [1]})
                     writer.write({sequence_active_key: [0]})
                     run_abort(writer, log_key)
                     writer.write({status_key: [1]})
                     writer.write({abort_active_key: [0]})
-                    writer.write({clock_reset_key: ["45:00:00"]})
-            for v in frame[ping_key]:
-                if v == 1:
-                    log_event('Pong', writer, log_key)
-                     
+            '''
+            for time in frame[t_clock_key]:
+                if time % 15000 == 0 and time < -25000:
+                    log_event('Abort status good', writer, status_log_key)
+            '''         
             writer.write({armed_state_key: [1 if arm_flag else 0]})
             writer.write({status_key: [1 if active_flag else 0]})
 
