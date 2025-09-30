@@ -35,7 +35,7 @@ def main():
             control_wiring = pd.ExcelFile(paths.control_wiring)
 
             # Use the new setup_device method which handles everything
-            daq_system.setup_device(device, data_wiring, control_wiring)
+            daq_system.setup_device(device, data_wiring, control_wiring, device_name)
 
     except DAQError as e:
         logger.error(f"DAQ Error: {e}")

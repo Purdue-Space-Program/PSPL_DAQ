@@ -10,13 +10,15 @@ def process_analog_input(
     device: sy.Device,
     channel_factory: ChannelFactory,
     stream_rate: int,
+    device_name: str,
 ):
     """Process analog input configuration"""
     sensors = data.parse("AI_slope-offset")
 
     for _, row in sensors.iterrows():
         # Create timestamp channel
-        bcls_ai_time = channel_factory.create_timestamp_channel("BCLS_ai_time")
+        
+        bcls_ai_time = channel_factory.create_timestamp_channel(f"{device_name}_BCLS_ai_time")
 
         # Create sensor channel
         sensor_channel = channel_factory.create_data_channel(

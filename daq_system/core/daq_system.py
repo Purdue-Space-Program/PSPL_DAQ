@@ -379,6 +379,7 @@ class DAQSystem:
         device: sy.Device,
         data_wiring: pd.ExcelFile,
         control_wiring: pd.ExcelFile,
+        device_name: str,
     ) -> None:
         """
         Complete device setup in the correct sequence:
@@ -407,6 +408,7 @@ class DAQSystem:
             device,
             self.channel_factory,
             self.config.stream_rate,
+            device_name,
         )
 
         process_digital_input(
