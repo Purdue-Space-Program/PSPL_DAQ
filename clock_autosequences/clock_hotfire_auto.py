@@ -187,7 +187,7 @@ def wait_for_timestamps():
             name="Automatic Control System",
             write=[IGNITOR_CMD, DELUGE_CMD, PURGE_CMD, ACTUATOR_CMD, VENT_QD_CMD, HELIUM_QD_CMD, T_CLOCK],
             read=[IGNITOR_STATE, DELUGE_STATE, PURGE_STATE, ACTUATOR_STATE, VENT_QD_STATE, HELIUM_QD_STATE, FU_TANK_PRESSURE, OX_TANK_PRESSURE],
-            write_authorities=[200],  # Set high authority to prevent interference
+            write_authorities=[10],  # Set high authority to prevent interference
         ) as ctrl:
             with client.open_streamer([arm_key, shutdown_key, arm_abort_key, clock_key]) as streamer, \
                 client.open_writer(start=sy.TimeStamp.now(), channels=[armed_state_key, status_key, sequence_active_key, log_key, start_clock_key, stop_clock_key], enable_auto_commit=True) as writer:
@@ -315,3 +315,6 @@ def wait_for_timestamps():
 
 if __name__ == "__main__":
     wait_for_timestamps()    
+
+
+ctrl.set_authority(400)
