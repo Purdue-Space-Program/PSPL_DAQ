@@ -20,7 +20,7 @@ def log_event(message, writer, log_key):
 
 
 # Main autosequence
-def run_sequence(writer, log_key, fu_lower_redline, ox_lower_redline):
+def run_sequence(writer, log_key, fu_lower_setpoint, ox_lower_setpoint):
     """Execute the Hot Fire Auto Sequence with control logic."""
     # Connect to the Synnax system
     try:
@@ -50,7 +50,7 @@ def run_sequence(writer, log_key, fu_lower_redline, ox_lower_redline):
     ACTUATOR_STATE = "ACTUATOR_state"
 
     log_event("Starting Hot Fire Auto Sequence", writer, log_key)
-    
+
     try:
         # Open a control sequence under a context manager, so control is released when done
         with client.control.acquire(
@@ -70,24 +70,14 @@ def run_sequence(writer, log_key, fu_lower_redline, ox_lower_redline):
 
             #wait for fuel tank to prepress
             if ctrl.wait_until(
-                lambda c: c['PT-FU-201'] > fu_lower_redline,
+                lambda c: c['PT-FU-201'] > fu_lower_setpoint and c['PT-OX-201'] > ox_lower_setpoint,
                 timeout=5 * sy.TimeSpan.SECOND,
             ):
-                log_event("Fuel tank reached prepress pressure sucessfully", writer, log_key)
+                log_event("Tanks reached prepress pressure sucessfully", writer, log_key)
             else:
-                log_event("Fuel tank failed to prepress, aborting", writer, log_key)
+                log_event("Tanks failed to prepress, aborting", writer, log_key)
                 return
             
-            #wait for ox tank to prepress
-            if ctrl.wait_until(
-                lambda c: c['PT-OX-201'] > ox_lower_redline,
-                timeout=5 * sy.TimeSpan.SECOND,
-            ):
-                log_event("Ox tank reached prepress pressure sucessfully", writer, log_key)
-            else:
-                log_event("Ox tank failed to prepress, aborting", writer, log_key)
-                return
-
             #start onboard sequence
             if onboard_active:
                 cmd.send_command("start")
