@@ -86,12 +86,6 @@ def main():
         virtual=True,
         retrieve_if_name_exists=True,
     )
-    string_output = client.channels.create(
-    name='T_CLOCK_STRING',
-    data_type='String',
-    virtual=True,
-    retrieve_if_name_exists=True,
-    )
 
     input_channels = [
         t_clock_add_min.key,
@@ -108,7 +102,6 @@ def main():
         hold_state.key,
         clock_enable_index.key,
         log_channel.key,
-        string_output.key
     ]
 
     with client.open_streamer(input_channels) as streamer, \
@@ -163,11 +156,7 @@ def main():
 
             minutes = int(abs_ms // 60000)
             seconds = int((abs_ms // 1000) % 60)
-            hundredths = int((abs_ms % 1000) // 10) 
             milliseconds = int(t_clock.milliseconds % 1000)
-
-            time_string = f'{sign_prefix}{minutes:d}:{seconds:02d}.{hundredths:02d}'
-
 
             if minutes != last_minutes or seconds != last_seconds:
 
@@ -184,7 +173,6 @@ def main():
                 clock_index: sy.TimeStamp.now(),
                 clock_enable: int(clock_running),
                 hold_state: int(not clock_running),
-                string_output.key: time_string,
                 clock_enable_index: sy.TimeStamp.now(),
             })
 
