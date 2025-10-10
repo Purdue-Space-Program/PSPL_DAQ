@@ -162,19 +162,14 @@ def main():
                 is_negative = t_clock.milliseconds < 0
                 abs_ms = abs(t_clock.milliseconds)
 
-                sign_prefix = '-' if is_negative else ''
+                sign_prefix = '-' if is_negative else '+'
 
                 minutes = int(abs_ms // 60000)
                 seconds = int((abs_ms // 1000) % 60)
-                hundredths = int((abs_ms % 1000) // 10) 
-                milliseconds = int(t_clock.milliseconds % 1000)
-
-                time_string = f'{sign_prefix} {minutes:d}:{seconds:02d}.{hundredths:02d}'
-
 
                 if minutes != last_minutes or seconds != last_seconds:
 
-                    the_string = f'T{sign_prefix}{minutes:d}:{seconds:02d}'
+                    the_string = f'T{sign_prefix}{minutes:02d}:{seconds:02d}'
 
                     writer.write({
                         clock_string: the_string,
