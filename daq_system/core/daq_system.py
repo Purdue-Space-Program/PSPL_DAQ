@@ -360,7 +360,7 @@ class DAQSystem:
                         name=f"Initialize channel {i} in {digital_write_task.name}",
                         write=[cmd_channel],
                         read=[state_channel],
-                        write_authorities=50,
+                        write_authorities=255,
                     ) as ctrl:
                         ctrl[cmd_channel] = DEENERGIZED
                         logger.info(f"Set channel {cmd_channel} to DEENERGIZED")
@@ -424,6 +424,7 @@ class DAQSystem:
             device,
             self.channel_factory,
             self.config.sample_rate,
+            device_name,
         )
         logger.info(f"Completed processing device data for {device.location}")
 

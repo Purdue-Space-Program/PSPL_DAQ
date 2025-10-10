@@ -53,10 +53,11 @@ def process_digital_output(
     device: sy.Device,
     channel_factory: ChannelFactory,
     sample_rate: int,
+    device_name: str,
 ):
 
     state_time_chan = channel_factory.client.channels.create(
-        name="state_time",
+        name=f"{device_name}_state_time",
         is_index=True,
         data_type=sy.DataType.TIMESTAMP,
         retrieve_if_name_exists=True,
@@ -79,7 +80,7 @@ def process_digital_output(
         state_chan = channel_factory.client.channels.create(
             name=f"{name}_state",
             data_type=sy.DataType.UINT8,
-            index=state_time_chan.key,
+            index= state_time_chan.key,
             retrieve_if_name_exists=True,
         )
 
