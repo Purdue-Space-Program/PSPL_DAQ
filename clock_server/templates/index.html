@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live String Display</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Libre Franklin', sans-serif; /* Updated font */
+            background: transparent; /* Transparent background */
+        }
+        .massive-text {
+            font-size: 15vw; /* Font size relative to viewport width */
+            line-height: 1; /* Tight line height */
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-4 m-0 overflow-hidden">
+
+    <div class="w-full h-full flex items-center justify-center">
+        
+        <div id="string-display" 
+             class="text-white-400 massive-text font-mono break-words 
+                    text-center p-0 m-0 leading-none">
+            Loading...
+        </div>
+        
+    </div>
+
+    <script>
+        const stringDisplay = document.getElementById('string-display');
+
+        // --- Polling Function ---
+        async function pollString() {
+            try {
+                const response = await fetch('/api/string');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                
+                const newString = data.current_string;
+
+                if (stringDisplay.textContent !== newString) {
+                    stringDisplay.textContent = newString;
+                }
+            } catch (error) {
+                console.error("Error polling for string:", error);
+                stringDisplay.textContent = "Error connecting to server.";
+            }
+        }
+
+        setInterval(pollString, 200);
+        pollString();
+    </script>
+
+</body>
+</html>
