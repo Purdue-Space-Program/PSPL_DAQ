@@ -21,7 +21,7 @@ pre_press_time = -15000 #start prepress at t-15s
 pre_press_wait_time = 3000 #wait for 3s before checking prepress sucess condition
 activate_deluge_time = -8000
 fire_igniter_time = -3000 #fire igniter at t-3s
-activate_hs_camera_time = -500 #activate hs camera at t-150 ms
+hs_camera_pulse_length = 10 #high side trigger length in ms
 fire_actuator_time = 0 #fire actuator at t-0s
 
 pop_vent_qds_time = pop_qd_time 
@@ -365,8 +365,6 @@ def wait_for_timestamps():
                                 deluge_activated_flag = False
                             if current_t_time <= fire_igniter_time and igniter_fired_flag == True:
                                 igniter_fired_flag = False
-                            if current_t_time <= activate_hs_camera_time and high_speed_camera_activated_flag == True:
-                                high_speed_camera_activated_flag = False
                             if current_t_time <= fire_actuator_time and actuator_fired_flag == True:
                                 actuator_fired_flag = False
 
@@ -431,7 +429,7 @@ def wait_for_timestamps():
                                 log_event("Firing Actuator", writer, log_key)
                                 run_event(ctrl, HS_CAMERA_CMD, ENERGIZE)
                                 log_event("Activating High Speed Camera Pulse", writer, log_key)
-                                ctrl.sleep(0.01)
+                                ctrl.sleep(hs_camera_pulse_length)
                                 run_event(ctrl, HS_CAMERA_CMD, DEENERGIZE)
                                 log_event("Deactivating High Speed Camera Pulse", writer, log_key)
                                 
