@@ -167,6 +167,9 @@ def main():
                 minutes = int(abs_ms // 60000)
                 seconds = int((abs_ms // 1000) % 60)
 
+                if not is_negative:
+                    clock_offset += 1000
+
                 if minutes != last_minutes or seconds != last_seconds:
 
                     the_string = f'T{sign_prefix}{minutes:02d}:{seconds:02d}'
