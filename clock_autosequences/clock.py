@@ -168,7 +168,7 @@ def main():
                 seconds = int((abs_ms // 1000) % 60)
 
                 if not is_negative:
-                    clock_offset += 1000
+                    seconds += 1
 
                 if minutes != last_minutes or seconds != last_seconds:
 
