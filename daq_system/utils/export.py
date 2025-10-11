@@ -21,7 +21,7 @@ def main():
     output_df = pd.DataFrame()
 
     # File of channels to export.
-    with open('daq_system/utils/export.yaml') as f:
+    with open('daq_system/utils/export-DO.yaml') as f:
         yaml_data = yaml.safe_load(f)
 
         try:
@@ -37,8 +37,8 @@ def main():
             for i, ch_name in enumerate(ai_excel_file['Name']):
                 row = ai_excel_file.iloc[i]
                 if ch_name in yaml_data['channels']:
-                    if "BCLS_ai_time" not in output_df.columns:
-                        output_df["BCLS_ai_time"] = pd.Series(the_range["BCLS_ai_time"]).astype('int64').reset_index(drop=True)
+                    if "Dev5_BCLS_ai_time" not in output_df.columns:
+                        output_df["Dev5_BCLS_ai_time"] = pd.Series(the_range["Dev5_BCLS_ai_time"]).astype('int64').reset_index(drop=True)
 
                     data = the_range[ch_name]
 

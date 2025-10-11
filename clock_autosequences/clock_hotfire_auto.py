@@ -21,13 +21,13 @@ pre_press_time = -15000 #start prepress at t-15s
 pre_press_wait_time = 3000 #wait for 3s before checking prepress sucess condition
 activate_deluge_time = -8000
 fire_igniter_time = -3000 #fire igniter at t-3s
-activate_hs_camera_time = -150 #activate hs camera at t-150 ms
+activate_hs_camera_time = -500 #activate hs camera at t-150 ms
 fire_actuator_time = 0 #fire actuator at t-0s
 
 pop_vent_qds_time = pop_qd_time 
 pop_helium_qd_time = pop_qd_time + 2000
 
-prepress_margin = 5 # += margin in psi for prepress validation
+prepress_margin = 10 # += margin in psi for prepress validation
 
 def log_event(message, writer, log_key):
     """Log events with timestamps."""
@@ -112,6 +112,13 @@ def wait_for_timestamps():
         retrieve_if_name_exists=True,
     )
 
+    clear_main_hold_state_channel = client.channels.create(
+        name="CLEAR_MAIN_HOLD_STATE",
+        data_type="uint8",
+        virtual=True,
+        retrieve_if_name_exists=True,
+    )
+
     pull_BB_setpoints_channel = client.channels.create(
         name="PULL_BB_SETPOINTS",
         data_type="uint8",
@@ -181,7 +188,7 @@ def wait_for_timestamps():
     HS_CAMERA_STATE = "HS_CAMERA_state"
     HS_CAMERA_CMD = "HS_CAMERA_cmd"
 
-    CLEAR_PREPRESS = 'CLEAR_PREPRESS_HOLD'
+    CLEAR_PREPRESS = clear_prepress_channel.key
 
     arm_key = arm_channel.key
     shutdown_key = shutdown_channel.key
@@ -195,6 +202,7 @@ def wait_for_timestamps():
     stop_clock_key = stop_clock_channel.key
     pull_BB_setpoints_key = pull_BB_setpoints_channel.key
     clear_main_hold_key = clear_main_hold_channel.key
+    clear_main_hold_state_key = clear_main_hold_state_channel.key
 
     #command channel flags
     arm_flag = False
@@ -213,6 +221,7 @@ def wait_for_timestamps():
     igniter_fired_flag = False
     actuator_fired_flag = False
     high_speed_camera_activated_flag = False
+    sequence_started_flag = False
 
     #input and output keys for streamer
     input_keys = [
@@ -231,6 +240,7 @@ def wait_for_timestamps():
         log_key, 
         start_clock_key, 
         stop_clock_key, 
+        clear_main_hold_state_key,
     ]
 
     #input and output channels for control sequence
@@ -318,6 +328,7 @@ def wait_for_timestamps():
                             log_event(ox_upper, writer, log_key)
 
                     writer.write({armed_state_key: [1 if arm_flag else 0]})
+                    writer.write({clear_main_hold_state_key: [1 if main_hold_cleared_flag else 0]})
 
                     if shutdown_flag:
                         writer.write({status_key: [0]})
@@ -327,16 +338,19 @@ def wait_for_timestamps():
                         break
 
                     #check to see if we should be scanning for autosequence timings
-                    if current_t_time >= main_hold_time:
-                        if main_hold_cleared_flag == True and arm_flag == True and arm_abort_flag == True:
+                    if current_t_time >= main_hold_time and current_t_time <= 500:
+                        if main_hold_cleared_flag == True and arm_flag == True and arm_abort_flag == True :
                             if ctrl[T_CLOCK_STATE] == 0:
                                 run_event(ctrl, T_CLOCK_ENABLE, 1)
                                 log_event('Main hold cleared, starting sequence', writer, log_key)
+                                sequence_started_flag = True
                             writer.write({sequence_active_key: [1]})
 
                             #check current t-time to set what items have already passed in the countdown
                             if current_t_time < main_hold_time and main_hold_cleared_flag == True:
                                 main_hold_cleared_flag = False
+                            if current_t_time < main_hold_time and sequence_started_flag == True:
+                                sequence_started_flag = False
                             if current_t_time <= activate_purge_time and purge_activated_flag == True:
                                 purge_activated_flag = False
                             if current_t_time <= pop_vent_qds_time and vent_qds_popped_flag == True: 
@@ -391,7 +405,7 @@ def wait_for_timestamps():
                                 else:
                                     run_event(ctrl, T_CLOCK_ENABLE, 0)
                                     if ctrl.wait_until(
-                                        lambda c: (c[FU_TANK_PRESSURE] > fu_lower and c[FU_TANK_PRESSURE] < fu_upper and c[OX_TANK_PRESSURE] > ox_lower and c[OX_TANK_PRESSURE] < ox_upper) or c[CLEAR_PREPRESS] == 1,
+                                        lambda c: (c[FU_TANK_PRESSURE] > fu_lower and c[FU_TANK_PRESSURE] < fu_upper and c[OX_TANK_PRESSURE] > ox_lower and c[OX_TANK_PRESSURE] < ox_upper) or c.get(CLEAR_PREPRESS, 0) == 1,
                                         timeout=10 * sy.TimeSpan.SECOND, 
                                     ):
                                         log_event("Prepress Validation completed", writer, log_key)
@@ -410,23 +424,25 @@ def wait_for_timestamps():
                                 run_event(ctrl, IGNITOR_CMD, ENERGIZE)
                                 igniter_fired_flag = True
                                 log_event("Firing Ignitor", writer, log_key)
-
-                            if current_t_time > activate_hs_camera_time and high_speed_camera_activated_flag == False and prepress_hold_cleared_flag == True:
-                                run_event(ctrl, HS_CAMERA_CMD, ENERGIZE)
-                                high_speed_camera_activated_flag = True
-                                log_event("Activating High Speed Camera Pulse", writer, log_key)
-
+                            
                             if current_t_time > fire_actuator_time and actuator_fired_flag == False and prepress_hold_cleared_flag == True:
                                 run_event(ctrl, ACTUATOR_CMD, ENERGIZE)
                                 actuator_fired_flag = True
                                 log_event("Firing Actuator", writer, log_key)
+                                run_event(ctrl, HS_CAMERA_CMD, ENERGIZE)
+                                log_event("Activating High Speed Camera Pulse", writer, log_key)
+                                ctrl.sleep(0.01)
                                 run_event(ctrl, HS_CAMERA_CMD, DEENERGIZE)
                                 log_event("Deactivating High Speed Camera Pulse", writer, log_key)
+                                
                         else:
                             if ctrl[T_CLOCK_STATE] == 1:
                                 run_event(ctrl, T_CLOCK_ENABLE, 0)
+                                
                     else:
                         writer.write({sequence_active_key: [0]})
+                        writer.write({clear_main_hold_state_key: [0]})
+                        main_hold_cleared_flag = False
 
 if __name__ == "__main__":
     wait_for_timestamps()    
