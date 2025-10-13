@@ -5,10 +5,11 @@ import pandas as pd
 import colorama
 import yaml
 import csv
+import os
 
 pd.set_option("display.float_format", "{:.20f}".format)
 
-def main():
+def export_data(range_name):
     colorama.init()
 
     client = sy.Synnax(
@@ -21,11 +22,12 @@ def main():
     output_df = pd.DataFrame()
 
     # File of channels to export.
-    with open('daq_system/utils/export-DO.yaml') as f:
+    with open('daq_system/utils/export.yaml') as f:
         yaml_data = yaml.safe_load(f)
-
+        os.makedirs(rf"daq_system/utils/{range_name}", exist_ok=True)
         try:
-            the_range = client.ranges.retrieve(name=yaml_data['range'])
+            #the_range = client.ranges.retrieve(name=yaml_data['range'])
+            the_range = client.ranges.retrieve(name = range_name)
         except sy.exceptions.QueryError:
             print(Style.BRIGHT + Fore.RED + 'That range does not exist!!' + Style.RESET_ALL)
             return
@@ -60,7 +62,9 @@ def main():
                 output_df[ch_name] = pd.Series(the_range[ch_name]).reset_index(drop=True)
                     
     print(output_df)
-    output_df.to_csv(f"datadump_{yaml_data['range']}.csv", index=False, float_format='%.19f')
+    
+    output_df.to_csv(rf"daq_ststem/utils//{range_name}/datadump_{range_name}.csv", index=False, float_format='%.19f')
 
 if __name__ == '__main__':
-    main()
+    range_name = "10-10 Hotfire Attempt"
+    export_data(range_name)
