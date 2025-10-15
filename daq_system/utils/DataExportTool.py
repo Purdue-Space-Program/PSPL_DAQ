@@ -16,16 +16,7 @@ from . import datareducer as dr
 from . import dataprocessor as dp
 from . import export as ex
 
-def export_reduce_process(raw_data_file, range_name, input_lists):
-    ex.export_data(range_name)
-    dr.process_data_reduction(raw_data_file, range_name)
-    for input_list in input_lists:
-        dp.create_interactive_plot(range_name, input_list)
-
-if __name__ == "__main__":
-    range_name = "10-10 Hotfire Attempt"
-    raw_data_file = rf"daq_ststem/utils//{range_name}/datadump_{range_name}.csv"
-    
+def export_reduce_process(raw_data_file, range_name):
     input_lists = [
         [
             "RTDs", #plot title
@@ -198,7 +189,13 @@ if __name__ == "__main__":
             ],
         ],
     ]
+    ex.export_data(range_name)
+    dr.process_data_reduction(raw_data_file, range_name)
+    for input_list in input_lists:
+        dp.create_interactive_plot(range_name, input_list)
 
-
-    export_reduce_process(raw_data_file, range_name, input_lists)
+if __name__ == "__main__":
+    range_name = "Hotfire Attempt 10-11"
+    raw_data_file = rf"daq_system/utils//{range_name}/datadump_{range_name}.csv"
+    export_reduce_process(raw_data_file, range_name)
     

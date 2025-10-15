@@ -12,7 +12,7 @@ pd.set_option("display.float_format", "{:.20f}".format)
 def export_data(range_name):
     colorama.init()
 
-    client = sy.Synnax(
+    export_client = sy.Synnax(
         host=DAQConfig.host,
         port=DAQConfig.port,
         username=DAQConfig.username,
@@ -27,7 +27,7 @@ def export_data(range_name):
         os.makedirs(rf"daq_system/utils/{range_name}", exist_ok=True)
         try:
             #the_range = client.ranges.retrieve(name=yaml_data['range'])
-            the_range = client.ranges.retrieve(name = range_name)
+            the_range = export_client.ranges.retrieve(name = range_name)
         except sy.exceptions.QueryError:
             print(Style.BRIGHT + Fore.RED + 'That range does not exist!!' + Style.RESET_ALL)
             return
@@ -63,7 +63,7 @@ def export_data(range_name):
                     
     print(output_df)
     
-    output_df.to_csv(rf"daq_ststem/utils//{range_name}/datadump_{range_name}.csv", index=False, float_format='%.19f')
+    output_df.to_csv(rf"daq_system/utils//{range_name}/datadump_{range_name}.csv", index=False, float_format='%.19f')
 
 if __name__ == '__main__':
     range_name = "10-10 Hotfire Attempt"
