@@ -188,6 +188,30 @@ def export_reduce_process(raw_data_file, range_name):
                 
             ],
         ],
+        [
+            "Fill Temperatures", #plot title
+            "Time", #x axis title
+            "Temperatures(K)",  # Label for the LEFT y-axis
+            "", # Label for the RIGHT y-axis
+            "Fill Temperatures",  # Interactive HTML file
+            None,  # start time Example: '2025-09-19 14:30:00'
+            None,  # end time
+            [
+                {
+                "column": "TC-FU-04",
+                "name": "TC-FU-04",
+                "color": "#D62728",  # Red
+                "yaxis": "y1",
+                },
+                {
+                "column": "TC-OX-04",
+                "name": "TC-OX-04",
+                "color": "#1B3CDF",  # Blue
+                "yaxis": "y1",
+                },
+                
+            ],
+        ],
     ]
     ex.export_data(range_name)
     dr.process_data_reduction(raw_data_file, range_name)

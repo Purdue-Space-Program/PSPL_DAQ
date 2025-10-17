@@ -3,14 +3,11 @@ from datetime import datetime
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'PSPL_CMS_AVIONICS_COTS_FSW', 'tools')))
-import command as cmd
-from daq_system.utils import DataExportTool as dat
-import time
-
+import command as cmd # type: ignore
 
 #MAKE SURE TO TURN ON BEFORE REAL TESTING
 ######################
-onboard_active = False
+onboard_active = True
 ######################
 
 ENERGIZE = 0
@@ -25,7 +22,7 @@ log_list = []
 #T-TIMES in milliseconds
 
 global test_name
-test_name = "testpleasejustworkahhhhhhhhhhhhhhhh"
+test_name = "10-17_Hotfire_Attempt"
 
 main_hold_time = -25000 #Main hold while waiting for prop fill to complete
 activate_purge_time = -24000 #activate purge at t-24s
@@ -43,7 +40,7 @@ pop_helium_qd_time = pop_qd_time + 2000
 qd_pop_duration = 1 #flow n2 through the pushers for 1 second
 
 prepress_margin = 10 # += margin in psi for prepress validation
-target_copv_pressure = 4800 #target copv pressure in psi
+target_copv_pressure = 4500 #target copv pressure in psi
 
 def log_event(message, writer, log_key):
     """Log events with timestamps."""
@@ -366,15 +363,10 @@ def wait_for_timestamps():
 
                 writer.write({status_key: [1]})
 
-                global refrence_time
                 refrence_time = sy.TimeStamp.now()
-                global fill_start_time 
                 fill_start_time = refrence_time
-                global shutdown_time
                 shutdown_time = refrence_time
-                global test_start_time
                 test_start_time = refrence_time
-                global test_end_time
                 test_end_time = refrence_time
 
                 for frame in streamer:
@@ -436,6 +428,14 @@ def wait_for_timestamps():
                         writer.write({armed_state_key: [0]})
                         writer.write({sequence_active_key: [0]})
                         writer.write({copv_override_state_key: [0]})
+                        writer.write({copv_fill_light_key: [0]})
+
+                        log_event(f'Full Range Name: "{test_name}_full_dataset"', writer, log_key)
+                        log_event(f'Fill start Timestamp: {fill_start_time}', writer, log_key)
+                        log_event(f'Shutdown Timestamp: {shutdown_time}', writer, log_key)
+                        log_event(f'Test Range Name: "{test_name}_test_data"', writer, log_key)
+                        log_event(f'Test start Timestamp: {test_start_time}', writer, log_key)
+                        log_event(f'Test End Timestamp: {test_end_time}', writer, log_key)
 
                         log_event('Logging log events to the log event log.', writer, log_key)
                         log_event('Shutting down autosequence', writer, log_key)
@@ -448,15 +448,20 @@ def wait_for_timestamps():
                     
                     #check to see if we should be scanning for autosequence timings
                     writer.write({copv_fill_light_key: [1 if ctrl[COPV_PRESSURE] >= target_copv_pressure else 0]})
-                    if current_t_time >= main_hold_time and current_t_time <= 500:
-                        if main_hold_cleared_flag == True and arm_flag == True and arm_abort_flag == True and copv_full_flag == True:
+                    if ctrl[COPV_PRESSURE] >= target_copv_pressure:
+                        copv_full_flag = True
+
+                    if current_t_time >= main_hold_time - 10 and current_t_time <= 500:
+                        if main_hold_cleared_flag == True and arm_flag == True and arm_abort_flag == True and copv_full_flag == True and sequence_started_flag == False:
                             if ctrl[T_CLOCK_STATE] == 0:
                                 run_event(ctrl, T_CLOCK_ENABLE, 1)
                                 log_event('Main hold cleared, starting sequence', writer, log_key)
                                 sequence_started_flag = True
                                 test_start_time = sy.TimeStamp.now() - 30 * sy.TimeSpan.SECOND
                             writer.write({sequence_active_key: [1]})
-
+                        elif main_hold_cleared_flag == True and arm_flag == True and arm_abort_flag == True and sequence_started_flag == True:
+                            if ctrl[T_CLOCK_STATE] == 0:
+                                run_event(ctrl, T_CLOCK_ENABLE, 1)
                             #check current t-time to set what items have already passed in the countdown
                             if current_t_time < main_hold_time and main_hold_cleared_flag == True:
                                 main_hold_cleared_flag = False
@@ -520,6 +525,7 @@ def wait_for_timestamps():
                                         lambda c: (c[FU_TANK_PRESSURE] > fu_lower and c[FU_TANK_PRESSURE] < fu_upper and c[OX_TANK_PRESSURE] > ox_lower and c[OX_TANK_PRESSURE] < ox_upper) or c.get(CLEAR_PREPRESS, 0) == 1,
                                         timeout=10 * sy.TimeSpan.SECOND, 
                                     ):
+                                        log_event('Prepress override engaged', writer, log_key)
                                         log_event("Prepress Validation completed", writer, log_key)
                                         run_event(ctrl, T_CLOCK_ENABLE, 1)
                                         prepress_hold_cleared_flag = True
@@ -559,30 +565,3 @@ def wait_for_timestamps():
         
 if __name__ == "__main__":
     wait_for_timestamps()    
-    try:
-        range_client = sy.Synnax(
-            host="10.165.89.106",
-            port=2701,
-            username="Bill",
-            password="Bill",
-            secure=False,
-        )
-    except Exception as e:
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
-        print(f"[{timestamp}] {f"Failed to connect to Synnax system for trigger monitoring: {str(e)}"}")
-    
-    if fill_start_time != refrence_time and shutdown_time != refrence_time:
-        range_client.ranges.create(
-            name= f"{test_name}_full_dataset",
-            time_range = sy.TimeRange(start=fill_start_time, end=shutdown_time),
-        )
-        time.sleep(60)
-        dat.export_reduce_process(rf"daq_system/utils//{test_name}_full_dataset/datadump_{test_name}_full_dataset.csv", f"{test_name}_full_dataset")
-       
-    if test_start_time != refrence_time and test_end_time != refrence_time:
-        range_client.ranges.create(
-            name= f"{test_name}_test_dataset",
-            time_range = sy.TimeRange(start=test_start_time, end=test_end_time),
-        )
-        time.sleep(60)
-        dat.export_reduce_process(rf"daq_system/utils//{test_name}_test_dataset/datadump_{test_name}_test_dataset.csv", f"{test_name}_test_dataset")

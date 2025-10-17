@@ -3,7 +3,8 @@ from datetime import datetime
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'PSPL_CMS_AVIONICS_COTS_FSW', 'tools')))
-import command as cmd
+import command as cmd # type: ignore
+import time
 
 ENERGIZE = 0
 DEENERGIZE = 1
@@ -50,6 +51,8 @@ def run_abort(writer, log_key):
         ACTUATOR_STATE = "ACTUATOR_state"
 
         STOP_CLOCK = "SET_T_CLOCK_ENABLE"
+        DISARM_SEQUENCE = "ARM_AUTO"
+        RUN_ABORT = "RUN_ABORT"
 
         if onboard_active:
             cmd.send_command("abort")
@@ -57,9 +60,9 @@ def run_abort(writer, log_key):
 
         with client.control.acquire(
             name="Abort Sequence",
-            write_authorities=[230],
-            write=[IGNITOR_CMD, DELUGE_CMD, PURGE_CMD, ACTUATOR_CMD, STOP_CLOCK],
-            read=[IGNITOR_STATE, DELUGE_STATE, PURGE_STATE, ACTUATOR_STATE],
+            write_authorities=[202],
+            write=[IGNITOR_CMD, DELUGE_CMD, PURGE_CMD, ACTUATOR_CMD, STOP_CLOCK, DISARM_SEQUENCE],
+            read=[IGNITOR_STATE, DELUGE_STATE, PURGE_STATE, ACTUATOR_STATE, RUN_ABORT],
         ) as ctrl:
             log_event('Abort initiated', writer, log_key)
 
@@ -67,6 +70,7 @@ def run_abort(writer, log_key):
             start = sy.TimeStamp.now()
 
             ctrl[STOP_CLOCK] = 0
+            ctrl[DISARM_SEQUENCE] = 0
 
             ctrl[DELUGE_CMD] = ENERGIZE
             ctrl[PURGE_CMD] = ENERGIZE
@@ -74,41 +78,20 @@ def run_abort(writer, log_key):
             ctrl[ACTUATOR_CMD] = DEENERGIZE
             ctrl[IGNITOR_CMD] = DEENERGIZE
 
-            #close bbs
-
-            ctrl.sleep(15)
-
-            ctrl[DELUGE_CMD] = DEENERGIZE
-
-                # Wait until the deluge is shutoff
-            if ctrl.wait_until(
-                lambda c: c[DELUGE_STATE] == DEENERGIZE,
-                timeout=10 * sy.TimeSpan.SECOND, 
+            if not ctrl.wait_until_defined(
+                [RUN_ABORT], timeout=60
             ):
-                log_event("Deluge shutoff sucessfull", writer, log_key)
+                print(1)
             else:
-                log_event("Failed to shutoff deugle within timeout", writer, log_key)
+                return
             
-            ctrl[PURGE_CMD] = DEENERGIZE
-
-            # Wait until the N2 purge is shotoff
-            if ctrl.wait_until(
-                lambda c: c[PURGE_STATE] == DEENERGIZE,
-                timeout=10 * sy.TimeSpan.SECOND, 
-            ):
-                log_event("N2 Purge shutoff sucessfull", writer, log_key)
-            else:
-                log_event("Failed to shutoff N2 Purge within timeout", writer, log_key)
-
-            # Mark the end of the sequence
+            #Mark the end of the sequence
             end = sy.TimeStamp.now()
-
             # Label the sequence with the end time
             client.ranges.create(
                 name=f"Abort Sequence {end}",
                 time_range=sy.TimeRange(start=start, end=end),
             )
-
             log_event(f"Abort Sequence completed: {start} to {end}", writer, log_key)
     except Exception as e:
         log_event(f"Error occurred during sequence execution: {str(e)}", writer, log_key)
