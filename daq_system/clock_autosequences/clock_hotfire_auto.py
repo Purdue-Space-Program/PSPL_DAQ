@@ -22,7 +22,7 @@ log_list = []
 #T-TIMES in milliseconds
 
 global test_name
-test_name = "10-17_Hotfire_Attempt"
+test_name = "10-21_Hotfire_Attempt"
 
 main_hold_time = -25000 #Main hold while waiting for prop fill to complete
 activate_purge_time = -24000 #activate purge at t-24s
@@ -451,7 +451,7 @@ def wait_for_timestamps():
                     if ctrl[COPV_PRESSURE] >= target_copv_pressure:
                         copv_full_flag = True
 
-                    if current_t_time >= main_hold_time - 10 and current_t_time <= 500:
+                    if current_t_time >= main_hold_time and current_t_time <= 500:
                         if main_hold_cleared_flag == True and arm_flag == True and arm_abort_flag == True and copv_full_flag == True and sequence_started_flag == False:
                             if ctrl[T_CLOCK_STATE] == 0:
                                 run_event(ctrl, T_CLOCK_ENABLE, 1)

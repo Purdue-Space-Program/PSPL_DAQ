@@ -219,7 +219,7 @@ def export_reduce_process(raw_data_file, range_name):
         dp.create_interactive_plot(range_name, input_list)
 
 if __name__ == "__main__":
-    range_name = "Hotfire Attempt 10-11"
+    range_name = "10-21_Hotfire_Scrub_Data"
     raw_data_file = rf"daq_system/utils//{range_name}/datadump_{range_name}.csv"
     export_reduce_process(raw_data_file, range_name)
     
