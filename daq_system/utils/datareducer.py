@@ -134,4 +134,4 @@ def process_data_reduction(input_filepath, range_name):
     print("Done!")
 
 if __name__ == "__main__":
-    process_data_reduction(r"C:\Users\nmaso\OneDrive - purdue.edu\Desktop\datadump_10-10 Hotfire Attempt AI Data.csv", "10-10 Hotfire Attempt AI Data")
+    process_data_reduction(rf"C:\Users\nmaso\Documents\DAQ\PSPL_DAQ\daq_system\utils\10-29-LOX-Fill\datadump_10-29-LOX-Fill.csv", "10-29_Lox_Fill")

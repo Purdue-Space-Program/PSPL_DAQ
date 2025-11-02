@@ -117,4 +117,3 @@ def create_interactive_plot(range_name, input_list):
         print(f"Successfully saved interactive plot to '{OUTPUT_FILENAME}'")
     except Exception as e:
         print(f"Error: Could not save the plot file. Details: {e}")
-        

@@ -1,4 +1,4 @@
-range: "10-10 Hotfire Attempt"
+range: "10-25-fill-attempts"
 channels:
   - RTD-FU
   - RTD-OX
@@ -30,8 +30,8 @@ channels:
   - SV-HE-202-state
   - FMS
   - PT-CHAMBER
-  - TC-FU-BOTTOM
-  - TC-FU-UPPER
+  - TC-BATTERY
+  - TC-FU-VENT
   - PT-FU-202
   - PT-OX-202
 
