@@ -22,7 +22,7 @@ log_list = []
 #T-TIMES in milliseconds
 
 global test_name
-test_name = "10-21_Hotfire_Attempt"
+test_name = "11-3_Hotfire_Attempt"
 
 main_hold_time = -25000 #Main hold while waiting for prop fill to complete
 activate_purge_time = -24000 #activate purge at t-24s
@@ -209,11 +209,11 @@ def wait_for_timestamps():
     IGNITOR_CMD = "IGNITOR_cmd"
     IGNITOR_STATE = "IGNITOR_state"
 
-    DELUGE_CMD = "DELUGE_cmd"
-    DELUGE_STATE = "DELUGE_state"
+    DELUGE_CMD = "PV-WA-04_cmd"
+    DELUGE_STATE = "PV-WA-04_state"
 
-    PURGE_CMD = "SV-N2-02_cmd"
-    PURGE_STATE = "SV-N2-02_state"
+    PURGE_CMD = "SV-N2-01_cmd"
+    PURGE_STATE = "SV-N2-01_state"
 
     ACTUATOR_CMD = "ACTUATOR_cmd"
     ACTUATOR_STATE = "ACTUATOR_state"

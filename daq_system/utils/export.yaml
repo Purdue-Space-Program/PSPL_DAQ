@@ -1,4 +1,4 @@
-range: "10-25-fill-attempts"
+range: "11-2-Hotfire-Attempt"
 channels:
   - RTD-FU
   - RTD-OX
@@ -9,6 +9,7 @@ channels:
   - PT-FU-02
   - PT-OX-04
   - PT-FU-04
+  - PT-FU-06
   - TC-OX-02
   - TC-FU-02
   - TC-OX-04
@@ -18,7 +19,8 @@ channels:
   - PI-OX-03
   - PI-FU-02
   - PI-FU-03
-  - PI-DELUGE
+  - PI-FU-04
+  - PI-WA-04
   - REED-N2-02
   - REED-BP-01
   - PT-HE-201
