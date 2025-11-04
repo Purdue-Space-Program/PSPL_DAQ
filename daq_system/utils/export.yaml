@@ -21,7 +21,7 @@ channels:
   - PI-FU-03
   - PI-FU-04
   - PI-WA-04
-  - REED-N2-02
+  - REED-N2-01
   - REED-BP-01
   - PT-HE-201
   - PT-OX-201
@@ -36,4 +36,3 @@ channels:
   - TC-FU-VENT
   - PT-FU-202
   - PT-OX-202
-
