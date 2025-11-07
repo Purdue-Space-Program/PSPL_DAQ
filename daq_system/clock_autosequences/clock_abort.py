@@ -41,8 +41,8 @@ def run_abort(writer, log_key):
         IGNITOR_CMD = "IGNITOR_cmd"
         IGNITOR_STATE = "IGNITOR_state"
 
-        DELUGE_CMD = "PV-WA-04_cmd"
-        DELUGE_STATE = "PV-WA-04_state"
+        DELUGE_CMD = "DELUGE_cmd"
+        DELUGE_STATE = "DELUGE_state"
 
         PURGE_CMD = "SV-N2-01_cmd"
         PURGE_STATE = "SV-N2-01_state"
@@ -72,7 +72,7 @@ def run_abort(writer, log_key):
             ctrl[STOP_CLOCK] = 0
             ctrl[DISARM_SEQUENCE] = 0
 
-            ctrl[DELUGE_CMD] = ENERGIZE
+            ctrl[DELUGE_CMD] = DEENERGIZE
             ctrl[PURGE_CMD] = ENERGIZE
 
             ctrl[ACTUATOR_CMD] = DEENERGIZE

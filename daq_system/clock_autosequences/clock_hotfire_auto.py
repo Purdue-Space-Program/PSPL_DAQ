@@ -209,8 +209,8 @@ def wait_for_timestamps():
     IGNITOR_CMD = "IGNITOR_cmd"
     IGNITOR_STATE = "IGNITOR_state"
 
-    DELUGE_CMD = "PV-WA-04_cmd"
-    DELUGE_STATE = "PV-WA-04_state"
+    DELUGE_CMD = "DELUGE_cmd"
+    DELUGE_STATE = "DELUGE_state"
 
     PURGE_CMD = "SV-N2-01_cmd"
     PURGE_STATE = "SV-N2-01_state"
@@ -534,7 +534,7 @@ def wait_for_timestamps():
                                         main_hold_cleared_flag = False
                             
                             if current_t_time > activate_deluge_time and deluge_activated_flag == False and prepress_hold_cleared_flag == True:
-                                run_event(ctrl, DELUGE_CMD, ENERGIZE)
+                                run_event(ctrl, DELUGE_CMD, DEENERGIZE)
                                 deluge_activated_flag = True
                                 log_event("Activating Deluge", writer, log_key)
 
