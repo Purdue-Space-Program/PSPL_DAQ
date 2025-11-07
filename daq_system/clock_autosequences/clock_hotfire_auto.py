@@ -22,7 +22,7 @@ log_list = []
 #T-TIMES in milliseconds
 
 global test_name
-test_name = "11-3_Hotfire_Attempt"
+test_name = "11-6_Hotfire_Attempt"
 
 main_hold_time = -25000 #Main hold while waiting for prop fill to complete
 activate_purge_time = -24000 #activate purge at t-24s
