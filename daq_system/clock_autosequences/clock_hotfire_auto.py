@@ -2,7 +2,6 @@ import synnax as sy # type: ignore
 from datetime import datetime
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', 'PSPL_CMS_AVIONICS_COTS_FSW', 'tools')))
 import command as cmd # type: ignore
 
 #MAKE SURE TO TURN ON BEFORE REAL TESTING
@@ -22,7 +21,7 @@ log_list = []
 #T-TIMES in milliseconds
 
 global test_name
-test_name = "11-6_Hotfire_Attempt"
+test_name = "11-9_Hotfire_Attempt"
 
 main_hold_time = -25000 #Main hold while waiting for prop fill to complete
 activate_purge_time = -24000 #activate purge at t-24s

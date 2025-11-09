@@ -1,0 +1,14 @@
+[2025-11-09 15:15:36.484] Auto: Connected to Synnax for trigger monitoring
+[2025-11-09 15:15:36.487] Auto: Listening for trigger signals
+[2025-11-09 15:15:36.697] Auto: [284.99999948]
+[2025-11-09 15:15:36.699] Auto: [314.99999977]
+[2025-11-09 15:15:36.702] Auto: [284.99999998]
+[2025-11-09 15:15:36.703] Auto: [314.99999933]
+[2025-11-09 15:15:42.851] Auto: Full Range Name: "11-6_Hotfire_Attempt_full_dataset"
+[2025-11-09 15:15:42.852] Auto: Fill start Timestamp: 2025-11-09T15:15:36.706029-05:00
+[2025-11-09 15:15:42.854] Auto: Shutdown Timestamp: 2025-11-09T15:15:36.706029-05:00
+[2025-11-09 15:15:42.854] Auto: Test Range Name: "11-6_Hotfire_Attempt_test_data"
+[2025-11-09 15:15:42.856] Auto: Test start Timestamp: 2025-11-09T15:15:36.706029-05:00
+[2025-11-09 15:15:42.857] Auto: Test End Timestamp: 2025-11-09T15:15:36.706029-05:00
+[2025-11-09 15:15:42.858] Auto: Logging log events to the log event log.
+[2025-11-09 15:15:42.859] Auto: Shutting down autosequence
