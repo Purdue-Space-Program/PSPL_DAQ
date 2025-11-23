@@ -56,15 +56,19 @@ def export_data(range_name):
         # -------------------------------------------------------------
         # ANALOG INPUT (AI) CHANNELS
         # -------------------------------------------------------------
-        for i in DEFAULT_DEVICE_PATHS.values():
-            ai_excel_file = pd.read_excel(i.data_wiring, sheet_name='AI_slope-offset')
-            di_excel_file = pd.read_excel(i.data_wiring, sheet_name='DI')
-
+        for j in DEFAULT_DEVICE_PATHS.values():
+            ai_excel_file = pd.read_excel(j.data_wiring, sheet_name='AI_slope-offset')
+            di_excel_file = pd.read_excel(j.data_wiring, sheet_name='DI')
+            
+            device_name = next(
+                key for key, value in DEFAULT_DEVICE_PATHS.items() if value == j
+            )
+            print(device_name)
             for i, ch_name in enumerate(ai_excel_file['Name']):
                 row = ai_excel_file.iloc[i]
                 if ch_name in yaml_data['channels']:
                     # Retrieve the main AI time series once
-                    ai_time_key = "Dev5_BCLS_ai_time"
+                    ai_time_key = f"{device_name}_BCLS_ai_time"
                     if ai_time_key not in output_df.columns:
                         time_series = safe_series_retrieve(the_range, ai_time_key, dtype='int64')
                         if time_series is not None:
@@ -121,5 +125,5 @@ def export_data(range_name):
     output_df.to_csv(rf"daq_system/utils//{range_name}/datadump_{range_name}.csv", index=False, float_format='%.19f')
 
 if __name__ == '__main__':
-    range_name = "10-25-fill-attempts"
+    range_name = "Test"
     export_data(range_name)
