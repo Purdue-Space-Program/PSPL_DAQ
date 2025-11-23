@@ -215,11 +215,11 @@ def export_reduce_process(raw_data_file, range_name):
     ]
     ex.export_data(range_name)
     dr.process_data_reduction(raw_data_file, range_name)
-    for input_list in input_lists:
-        dp.create_interactive_plot(range_name, input_list)
+    #for input_list in input_lists:
+    #    dp.create_interactive_plot(range_name, input_list)
 
 if __name__ == "__main__":
-    range_name = "11-22-Methane-Fill"
+    range_name = "Test"
     raw_data_file = rf"daq_system/utils//{range_name}/datadump_{range_name}.csv"
     export_reduce_process(raw_data_file, range_name)
     

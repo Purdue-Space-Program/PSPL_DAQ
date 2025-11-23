@@ -59,10 +59,12 @@ def export_data(range_name):
         for j in DEFAULT_DEVICE_PATHS.values():
             ai_excel_file = pd.read_excel(j.data_wiring, sheet_name='AI_slope-offset')
             di_excel_file = pd.read_excel(j.data_wiring, sheet_name='DI')
+            do_excel_file = pd.read_excel(j.control_wiring, sheet_name = 'DO')
             
             device_name = next(
                 key for key, value in DEFAULT_DEVICE_PATHS.items() if value == j
             )
+
             print(device_name)
             for i, ch_name in enumerate(ai_excel_file['Name']):
                 row = ai_excel_file.iloc[i]
@@ -100,6 +102,23 @@ def export_data(range_name):
                     if data_series is not None:
                         output_df[ch_name] = data_series
                         print(ch_name)
+
+            #Do state channels
+            for i, ch_name in enumerate(do_excel_file['Name']):
+                row = do_excel_file.iloc[i]
+                if ch_name in yaml_data['channels']:
+                    # Retrieve State Time
+                    do_time_key = f"{device_name}_state_time"
+                    time_series = safe_series_retrieve(the_range, do_time_key, dtype='int64')
+                    if time_series is not None:
+                        output_df[do_time_key] = time_series
+                        print(do_time_key)
+
+                    # Retrieve DO Data
+                    state_data_series = safe_series_retrieve(the_range, f'{ch_name}_state')
+                    if state_data_series is not None:
+                        output_df[f'{ch_name}_state'] = 1 - state_data_series
+                        print(f'{ch_name}_state')
         
         # -------------------------------------------------------------
         # AVIONICS CHANNELS

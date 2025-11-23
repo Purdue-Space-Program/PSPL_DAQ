@@ -38,13 +38,13 @@ channels:
   - TC-FU-VENT
   - PT-FU-202
   - PT-OX-202
-  - ACTUATOR_state
-  - IGNITOR_state
-  - HS_CAMERA_state
-  - SV-HE-01_state
+  - ACTUATOR
+  - IGNITOR
+  - HS_CAMERA
+  - SV-HE-01
   - REED-FU-MAROTTA
   - REED-OX-MAROTTA
-  - SV-N2-02_state
-  - SV-N2-03_state
-  - SV-QD-01_state
-  - SV-QD-03_state
+  - SV-N2-02
+  - SV-N2-03
+  - SV-QD-01
+  - SV-QD-03
