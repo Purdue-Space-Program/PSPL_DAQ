@@ -20,7 +20,7 @@ def find_column_groups(columns):
                     data_cols_with_time.add(d_col)
     # Handle the special 'BCLS_ai_time' case which covers multiple columns
     if "Dev5_BCLS_ai_time" in time_cols:
-        ai_cols = [
+        ai_5_cols = [
             "PT-FU-04",
             "PT-HE-01",
             "PT-OX-04",
@@ -40,10 +40,49 @@ def find_column_groups(columns):
             "TC-HE-201",
             
         ]
-        for col in ai_cols:
+        for col in ai_5_cols:
             if col in columns and col not in data_cols_with_time:
                 time_col_map["Dev5_BCLS_ai_time"].append(col)
                 data_cols_with_time.add(col)
+    if "Dev6_BCLS_ai_time" in time_cols:
+        ai_6_cols = [
+            "PT-FU-6",
+            "TC-FU-202",
+            "TC-OX-202",
+            "PT-CHAMBER",
+            "TC-FU-VENT",
+            "TC-BATTERY",
+            
+        ]
+        for col in ai_6_cols:
+            if col in columns and col not in data_cols_with_time:
+                time_col_map["Dev6_BCLS_ai_time"].append(col)
+                data_cols_with_time.add(col)
+    
+    #state time channels
+    if "Dev5_state_time" in time_cols:
+        state_5_cols = [
+            "IGNITOR_state",
+            "ACTUATOR_state",
+            "SV-HE-01_state",
+            "SV-QD-01_state",
+            "SV-QD-03_state",
+        ]
+        for col in state_5_cols:
+            if col in columns and col not in data_cols_with_time:
+                time_col_map["Dev5_state_time"].append(col)
+                data_cols_with_time.add(col)
+    if "Dev6_state_time" in time_cols:
+        state_6_cols = [
+            "HS_CAMERA_state",
+            "SV-N2-02_state",
+            "SV-N2-03_state",
+        ]
+        for col in state_6_cols:
+            if col in columns and col not in data_cols_with_time:
+                time_col_map["Dev6_state_time"].append(col)
+                data_cols_with_time.add(col)
+
     # Identify any columns that weren't grouped
     unmapped_cols = set(columns) - data_cols_with_time - set(time_cols)
     if unmapped_cols:
