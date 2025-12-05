@@ -3,7 +3,7 @@ import numpy as np
 import time
 
 sy_client = sy.Synnax(
-    host='sedsdaq.ecn.purdue.edu',
+    host='10.165.89.106',
     port=2701,
     username='Bill',
     password='Bill',
