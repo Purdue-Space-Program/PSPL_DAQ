@@ -40,8 +40,8 @@ def run_abort(writer, log_key):
         IGNITOR_CMD = "IGNITOR_cmd"
         IGNITOR_STATE = "IGNITOR_state"
 
-        DELUGE_CMD = "DELUGE_cmd"
-        DELUGE_STATE = "DELUGE_state"
+        DELUGE_CMD = "PV_WA_04_cmd"
+        DELUGE_STATE = "PV_WA_04_state"
 
         PURGE_CMD = "SV_N2_01_cmd"
         PURGE_STATE = "SV_N2_01_state"
