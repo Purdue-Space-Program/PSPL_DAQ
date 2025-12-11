@@ -211,26 +211,26 @@ def wait_for_timestamps():
     DELUGE_CMD = "DELUGE_cmd"
     DELUGE_STATE = "DELUGE_state"
 
-    PURGE_CMD = "SV-N2-01_cmd"
-    PURGE_STATE = "SV-N2-01_state"
+    PURGE_CMD = "SV_N2_01_cmd"
+    PURGE_STATE = "SV_N2_01_state"
 
     ACTUATOR_CMD = "ACTUATOR_cmd"
     ACTUATOR_STATE = "ACTUATOR_state"
 
-    VENT_QD_CMD = "SV-QD-01_cmd"
-    VENT_QD_STATE = "SV-QD-01_state"
+    VENT_QD_CMD = "SV_QD_01_cmd"
+    VENT_QD_STATE = "SV_QD_01_state"
 
-    HELIUM_QD_CMD = "SV-QD-03_cmd"
-    HELIUM_QD_STATE = "SV-QD-03_state"
+    HELIUM_QD_CMD = "SV_QD_03_cmd"
+    HELIUM_QD_STATE = "SV_QD_03_state"
     
     if onboard_active:
-        COPV_PRESSURE = "PT-HE-201"
-        OX_TANK_PRESSURE = "PT-OX-201"
-        FU_TANK_PRESSURE = "PT-FU-201"
+        COPV_PRESSURE = "PT_HE_201"
+        OX_TANK_PRESSURE = "PT_OX_201"
+        FU_TANK_PRESSURE = "PT_FU_201"
     else:
-        COPV_PRESSURE = "PT-HE-01"  
-        OX_TANK_PRESSURE = "PT-OX-02"
-        FU_TANK_PRESSURE = "PT-FU-02"
+        COPV_PRESSURE = "PT_HE_01"  
+        OX_TANK_PRESSURE = "PT_OX_02"
+        FU_TANK_PRESSURE = "PT_FU_02"
     
     FU_UPPER = "FU_UPPER_SETP"
     FU_LOWER = "FU_LOWER_SETP"
