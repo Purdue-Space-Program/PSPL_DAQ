@@ -43,8 +43,8 @@ def run_abort(writer, log_key):
         DELUGE_CMD = "DELUGE_cmd"
         DELUGE_STATE = "DELUGE_state"
 
-        PURGE_CMD = "SV-N2-01_cmd"
-        PURGE_STATE = "SV-N2-01_state"
+        PURGE_CMD = "SV_N2_01_cmd"
+        PURGE_STATE = "SV_N2_01_state"
 
         ACTUATOR_CMD = "ACTUATOR_cmd"
         ACTUATOR_STATE = "ACTUATOR_state"
