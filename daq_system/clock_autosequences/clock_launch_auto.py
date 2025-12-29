@@ -4,7 +4,7 @@ import sys
 import os
 import command as cmd # type: ignore
 
-#MAKE SURE TO TURN ON BEFORE REAL TESTING
+#MAKE SURE SET TO TRUE BEFORE REAL TESTING
 ######################
 onboard_active = True
 ######################
@@ -21,26 +21,25 @@ log_list = []
 #T-TIMES in milliseconds
 
 global test_name
-test_name = "12-11-Hotfire-Attempt"
+test_name = "LAUNCH!!!"
 
-main_hold_time = -25000 #Main hold while waiting for prop fill to complete
-activate_purge_time = -24000 #activate purge at t-24s
-pop_qd_time = -24000 #pop QDs at t-24s
-qd_wait_time = -20000 #start post pop wait at t-20s
-pre_press_time = -15000 #start prepress at t-15s
+main_hold_time = -20000 #Main hold while waiting for prop fill to complete
+activate_purge_time = -19000 #activate purge at t-24s
+pop_qd_time = -19000 #pop QDs at t-24s
+qd_wait_time = -16000 #start post pop wait at t-20s
+pre_press_time = -10000 #start prepress at t-12s
 pre_press_wait_time = 3000 #wait for 3s before checking prepress sucess condition
-activate_deluge_time = -8000
 fire_igniter_time = -3000 #fire igniter at t-3s
-hs_camera_pulse_length = 0.010 #high side trigger length in s
 fire_actuator_time = 0 #fire actuator at t-0s
 deenergize_pyros_time = 1000 #deenergize pyros 1s after ignition
 
 pop_vent_qds_time = pop_qd_time 
+pop_fill_qds_time = pop_qd_time + 1000
 pop_helium_qd_time = pop_qd_time + 2000
 qd_pop_duration = 1 #flow n2 through the pushers for 1 second
 
-prepress_margin = 10 # += margin in psi for prepress validation
-target_copv_pressure = 4500 #target copv pressure in psi
+prepress_margin = 15 # negative margin in psi for prepress validation
+copv_lower_redline = 4500 #minimum copv pressure [psi]
 
 def log_event(message, writer, log_key):
     """Log events with timestamps."""
@@ -209,9 +208,6 @@ def wait_for_timestamps():
     IGNITOR_CMD = "IGNITOR_cmd"
     IGNITOR_STATE = "IGNITOR_state"
 
-    DELUGE_CMD = "PV_WA_04_cmd"
-    DELUGE_STATE = "PV_WA_04_state"
-
     PURGE_CMD = "SV_N2_01_cmd"
     PURGE_STATE = "SV_N2_01_state"
 
@@ -223,6 +219,9 @@ def wait_for_timestamps():
 
     HELIUM_QD_CMD = "SV_QD_03_cmd"
     HELIUM_QD_STATE = "SV_QD_03_state"
+
+    FILL_QD_CMD = "SV_QD_04_cmd"
+    FILL_QD_STATE = "SV_QD_04_state"
     
     if onboard_active:
         COPV_PRESSURE = "PT_HE_201"
@@ -243,9 +242,6 @@ def wait_for_timestamps():
 
     T_CLOCK_ENABLE = "SET_T_CLOCK_ENABLE"
     T_CLOCK_STATE = "T_CLOCK_ENABLE"
-
-    HS_CAMERA_STATE = "HS_CAMERA_state"
-    HS_CAMERA_CMD = "HS_CAMERA_cmd"
 
     CLEAR_PREPRESS = clear_prepress_channel.key
 
@@ -278,8 +274,8 @@ def wait_for_timestamps():
 
     #control channel flags
     purge_activated_flag = False
-    deluge_activated_flag = False
     vent_qds_popped_flag = False
+    fill_qds_popped_flag = False
     helium_qd_popped_flag = False
     marottas_regulated_flag = False
     prepress_hold_cleared_flag = False
@@ -318,27 +314,25 @@ def wait_for_timestamps():
     #input and output channels for control sequence
     input_authorities = [
         IGNITOR_STATE, 
-        DELUGE_STATE, 
         PURGE_STATE, 
         ACTUATOR_STATE, 
         VENT_QD_STATE, 
+        FILL_QD_STATE,
         HELIUM_QD_STATE, 
         FU_TANK_PRESSURE, 
         OX_TANK_PRESSURE,
         COPV_PRESSURE,
         CLEAR_PREPRESS,
-        HS_CAMERA_STATE,
         T_CLOCK_STATE,
     ]
 
     output_authorities = [
-        IGNITOR_CMD, 
-        DELUGE_CMD, 
+        IGNITOR_CMD,  
         PURGE_CMD, 
         ACTUATOR_CMD, 
-        VENT_QD_CMD, 
+        VENT_QD_CMD,
+        FILL_QD_CMD,
         HELIUM_QD_CMD, 
-        HS_CAMERA_CMD,
         T_CLOCK_ENABLE,
         COPV_LIGHT,
     ]
@@ -377,7 +371,6 @@ def wait_for_timestamps():
                 log_event(f"FU Upper Validation Setpoint: {fu_upper}psi", writer, log_key)
                 log_event(f"OX Lower Validation Setpoint: {ox_lower}psi", writer, log_key)
                 log_event(f"OX Upper Validation Setpoint: {ox_upper}psi", writer, log_key)
-
                 writer.write({status_key: [1]})
 
                 refrence_time = sy.TimeStamp.now()
@@ -447,7 +440,7 @@ def wait_for_timestamps():
                                 log_event('Stopping data recording', writer, log_key)
                     for v in frame[copv_override_key]:
                         writer.write({copv_override_state_key: [1 if v  == 1 else 0]})
-                        if v == 1 or ctrl[COPV_PRESSURE] >= target_copv_pressure:
+                        if v == 1 or ctrl[COPV_PRESSURE] >= copv_lower_redline:
                             copv_full_flag = True
                         else:
                             copv_full_flag = False
@@ -478,8 +471,8 @@ def wait_for_timestamps():
 
                     
                     #check to see if we should be scanning for autosequence timings
-                    writer.write({copv_fill_light_key: [1 if ctrl[COPV_PRESSURE] >= target_copv_pressure else 0]})
-                    if ctrl[COPV_PRESSURE] >= target_copv_pressure:
+                    writer.write({copv_fill_light_key: [1 if ctrl[COPV_PRESSURE] >= copv_lower_redline else 0]})
+                    if ctrl[COPV_PRESSURE] >= copv_lower_redline:
                         copv_full_flag = True
 
                     if current_t_time >= main_hold_time and current_t_time <= 500:
@@ -502,14 +495,14 @@ def wait_for_timestamps():
                                 purge_activated_flag = False
                             if current_t_time <= pop_vent_qds_time and vent_qds_popped_flag == True: 
                                 vent_qds_popped_flag = False
+                            if current_t_time <= pop_fill_qds_time and fill_qds_popped_flag == True: 
+                                fill_qds_popped_flag = False
                             if current_t_time <= pop_helium_qd_time and helium_qd_popped_flag == True: 
                                 helium_qd_popped_flag = False
                             if current_t_time <= pre_press_time and marottas_regulated_flag == True:
                                 marottas_regulated_flag = False
                             if current_t_time <= (pre_press_time + pre_press_wait_time) and prepress_hold_cleared_flag == True:
                                 prepress_hold_cleared_flag = False
-                            if current_t_time <= activate_deluge_time and deluge_activated_flag == True:
-                                deluge_activated_flag = False
                             if current_t_time <= fire_igniter_time and igniter_fired_flag == True:
                                 igniter_fired_flag = False
                             if current_t_time <= fire_actuator_time and actuator_fired_flag == True:
@@ -530,6 +523,14 @@ def wait_for_timestamps():
                                 ctrl.sleep(qd_pop_duration)
                                 run_event(ctrl, VENT_QD_CMD, DEENERGIZE)
                                 log_event("Vent QDs popped", writer, log_key)
+
+                            if current_t_time > pop_fill_qds_time and fill_qds_popped_flag == False:
+                                log_event("Popping Fill QDs", writer, log_key)
+                                run_event(ctrl, FILL_QD_CMD, ENERGIZE)
+                                fill_qds_popped_flag = True
+                                ctrl.sleep(qd_pop_duration)
+                                run_event(ctrl, FILL_QD_CMD, DEENERGIZE)
+                                log_event("Fill QDs popped", writer, log_key)
 
                             if current_t_time > pop_helium_qd_time and helium_qd_popped_flag == False:
                                 log_event("Popping Helium QD", writer, log_key)
@@ -565,11 +566,6 @@ def wait_for_timestamps():
                                     else:
                                         log_event("Failed to sucessfully prepress", writer, log_key)
                                         main_hold_cleared_flag = False
-                            
-                            if current_t_time > activate_deluge_time and deluge_activated_flag == False and prepress_hold_cleared_flag == True:
-                                run_event(ctrl, DELUGE_CMD, DEENERGIZE)
-                                deluge_activated_flag = True
-                                log_event("Activating Deluge", writer, log_key)
 
                             if current_t_time > fire_igniter_time and igniter_fired_flag == False and prepress_hold_cleared_flag == True:
                                 run_event(ctrl, IGNITOR_CMD, ENERGIZE)
@@ -580,11 +576,6 @@ def wait_for_timestamps():
                                 run_event(ctrl, ACTUATOR_CMD, ENERGIZE)
                                 actuator_fired_flag = True
                                 log_event("Firing Actuator", writer, log_key)
-                                run_event(ctrl, HS_CAMERA_CMD, ENERGIZE)
-                                log_event("Activating High Speed Camera Pulse", writer, log_key)
-                                ctrl.sleep(hs_camera_pulse_length)
-                                run_event(ctrl, HS_CAMERA_CMD, DEENERGIZE)
-                                log_event("Deactivating High Speed Camera Pulse", writer, log_key)
                                 test_end_time = sy.TimeStamp.now() + 30 * sy.TimeSpan.SECOND
 
                             if current_t_time > deenergize_pyros_time and pyros_deenergized_flag == False and prepress_hold_cleared_flag == True:
