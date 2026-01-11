@@ -75,7 +75,7 @@ def export_data(range_name):
                         time_series = safe_series_retrieve(the_range, ai_time_key, dtype='int64')
                         if time_series is not None:
                              output_df[ai_time_key] = time_series
-                             print(ai_time_key)
+                             #print(ai_time_key)
 
                     # Retrieve the AI data series
                     data_series = safe_series_retrieve(the_range, ch_name)
@@ -95,7 +95,7 @@ def export_data(range_name):
                     time_series = safe_series_retrieve(the_range, di_time_key, dtype='int64')
                     if time_series is not None:
                          output_df[di_time_key] = time_series
-                         print(di_time_key)
+                         #print(di_time_key)
 
                     # Retrieve DI Data
                     data_series = safe_series_retrieve(the_range, ch_name)
@@ -112,7 +112,7 @@ def export_data(range_name):
                     time_series = safe_series_retrieve(the_range, do_time_key, dtype='int64')
                     if time_series is not None:
                         output_df[do_time_key] = time_series
-                        print(do_time_key)
+                        #print(do_time_key)
 
                     # Retrieve DO Data
                     state_data_series = safe_series_retrieve(the_range, f'{ch_name}_state')
@@ -126,12 +126,13 @@ def export_data(range_name):
         avi_excel_file = pd.read_excel('daq_system/inputs/CMS_Avionics_Channels.xlsx', sheet_name='telem_channels')
         for ch_name in avi_excel_file['Name']:
             if ch_name in yaml_data['channels']:
+                #print(f'supposed to export {ch_name}')
                 # Retrieve Avionics Time
                 avi_time_key = f"{ch_name}_time"
                 time_series = safe_series_retrieve(the_range, avi_time_key)
                 if time_series is not None:
                     output_df[avi_time_key] = time_series
-                    print(avi_time_key)
+                    #print(avi_time_key)
                     
                 # Retrieve Avionics Data
                 data_series = safe_series_retrieve(the_range, ch_name)
@@ -144,5 +145,5 @@ def export_data(range_name):
     output_df.to_csv(rf"daq_system/utils//{range_name}/datadump_{range_name}.csv", index=False, float_format='%.19f')
 
 if __name__ == '__main__':
-    range_name = "Test"
+    range_name = "12-17-Hotfire"
     export_data(range_name)

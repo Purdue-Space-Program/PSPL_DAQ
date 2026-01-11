@@ -10,7 +10,6 @@ DEENERGIZE = 1
 
 onboard_active = False
 
-
 def log_event(message, writer, log_key):
     """Log events with timestamps."""
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
@@ -40,9 +39,6 @@ def run_abort(writer, log_key):
         IGNITOR_CMD = "IGNITOR_cmd"
         IGNITOR_STATE = "IGNITOR_state"
 
-        DELUGE_CMD = "PV_WA_04_cmd"
-        DELUGE_STATE = "PV_WA_04_state"
-
         PURGE_CMD = "SV_N2_01_cmd"
         PURGE_STATE = "SV_N2_01_state"
 
@@ -60,8 +56,8 @@ def run_abort(writer, log_key):
         with client.control.acquire(
             name="Abort Sequence",
             write_authorities=[202],
-            write=[IGNITOR_CMD, DELUGE_CMD, PURGE_CMD, ACTUATOR_CMD, STOP_CLOCK, DISARM_SEQUENCE],
-            read=[IGNITOR_STATE, DELUGE_STATE, PURGE_STATE, ACTUATOR_STATE, RUN_ABORT],
+            write=[IGNITOR_CMD, PURGE_CMD, ACTUATOR_CMD, STOP_CLOCK, DISARM_SEQUENCE],
+            read=[IGNITOR_STATE, PURGE_STATE, ACTUATOR_STATE, RUN_ABORT],
         ) as ctrl:
             log_event('Abort initiated', writer, log_key)
 
@@ -71,7 +67,6 @@ def run_abort(writer, log_key):
             ctrl[STOP_CLOCK] = 0
             ctrl[DISARM_SEQUENCE] = 0
 
-            ctrl[DELUGE_CMD] = DEENERGIZE
             ctrl[PURGE_CMD] = ENERGIZE
 
             ctrl[ACTUATOR_CMD] = DEENERGIZE
