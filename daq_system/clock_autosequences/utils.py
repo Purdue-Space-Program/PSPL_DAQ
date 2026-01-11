@@ -6,8 +6,8 @@ import logging
 
 # Common Synnax client
 sy_client = sy.Synnax(
-    host= "10.165.89.106",
-    port= "2701",
+    host= "192.168.2.147",
+    port= "9090",
     username= "Bill",
     password= "Bill",
     secure=False,
