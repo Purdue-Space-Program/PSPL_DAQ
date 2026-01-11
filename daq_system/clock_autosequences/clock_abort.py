@@ -8,7 +8,7 @@ import time
 ENERGIZE = 0
 DEENERGIZE = 1
 
-onboard_active = True
+onboard_active = False
 
 
 def log_event(message, writer, log_key):

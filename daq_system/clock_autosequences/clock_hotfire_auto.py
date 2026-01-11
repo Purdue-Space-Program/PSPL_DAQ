@@ -6,7 +6,7 @@ import command as cmd # type: ignore
 
 #MAKE SURE TO TURN ON BEFORE REAL TESTING
 ######################
-onboard_active = True
+onboard_active = False
 ######################
 
 ENERGIZE = 0
