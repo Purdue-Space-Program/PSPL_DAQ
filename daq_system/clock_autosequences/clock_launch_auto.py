@@ -6,12 +6,12 @@ import command as cmd # type: ignore
 
 #MAKE SURE SET TO TRUE BEFORE REAL TESTING
 ######################
-onboard_active = False
+onboard_active = True
 ######################
 
 ENERGIZE = 0
 DEENERGIZE = 1
-
+print("1111")
 default_authority = 10 #control autohrity when not running an action
 action_authority = 201 #control authority for running an action
 
@@ -60,7 +60,7 @@ def run_event(ctrl, command, state):
 def wait_for_timestamps():
     try:
         client = sy.Synnax(
-            host="192.168.2.147",
+            host="192.168.2.59",
             port=9090,
             username="Bill",
             password="Bill",
@@ -220,8 +220,8 @@ def wait_for_timestamps():
     HELIUM_QD_CMD = "SV_QD_03_cmd"
     HELIUM_QD_STATE = "SV_QD_03_state"
 
-    FILL_QD_CMD = "SV_QD_04_cmd"
-    FILL_QD_STATE = "SV_QD_04_state"
+    FILL_QD_CMD = "SV_QD_01_cmd"
+    FILL_QD_STATE = "SV_QD_01_state"
     
     if onboard_active:
         COPV_PRESSURE = "PT_HE_201"
@@ -475,7 +475,7 @@ def wait_for_timestamps():
                     if ctrl[COPV_PRESSURE] >= copv_lower_redline:
                         copv_full_flag = True
 
-                    if current_t_time >= main_hold_time and current_t_time <= 500:
+                    if current_t_time >= main_hold_time and current_t_time <= 2000:
                         if main_hold_cleared_flag == True and arm_flag == True and arm_abort_flag == True and copv_full_flag == True and sequence_started_flag == False:
                             if ctrl[T_CLOCK_STATE] == 0:
                                 run_event(ctrl, T_CLOCK_ENABLE, 1)
@@ -542,8 +542,9 @@ def wait_for_timestamps():
 
                             if current_t_time > pre_press_time and marottas_regulated_flag == False:
                                 if onboard_active:
-                                    cmd.send_command("SET_OX_STATE_REGULATE")
-                                    cmd.send_command("SET_FU_STATE_REGULATE")
+                                    #cmd.send_command("SET_OX_STATE_REGULATE")
+                                    #cmd.send_command("SET_FU_STATE_REGULATE")
+                                    print("0")
                                 else:
                                     log_event("FAILED TO REGULATE, ONBOARD INACTIVE", writer, log_key)
                                 marottas_regulated_flag = True

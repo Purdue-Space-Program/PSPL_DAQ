@@ -9,7 +9,7 @@ class DAQConfig:
 
     sample_rate: int = 100  # Hz
     stream_rate: int = 10  # Hz
-    host: str = "192.168.2.147"
+    host: str = "192.168.2.59"
     port: int = 9090
     username: str = "Bill"
     password: str = "Bill"
