@@ -99,7 +99,7 @@ def wait_for_trigger():
     #aquire synnax connection
     try:
         client = sy.Synnax(
-            host="192.168.2.147",
+            host="192.168.2.59",
             port=9090,
             username="Bill",
             password="Bill",

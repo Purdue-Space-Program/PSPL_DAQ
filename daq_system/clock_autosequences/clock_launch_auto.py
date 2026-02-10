@@ -11,7 +11,7 @@ onboard_active = True
 
 ENERGIZE = 0
 DEENERGIZE = 1
-print("1111")
+
 default_authority = 10 #control autohrity when not running an action
 action_authority = 201 #control authority for running an action
 
@@ -21,20 +21,21 @@ log_list = []
 #T-TIMES in milliseconds
 
 global test_name
-test_name = "LAUNCH!!!"
+test_name = "Launch"
 
 main_hold_time = -20000 #Main hold while waiting for prop fill to complete
-activate_purge_time = -19000 #activate purge at t-24s
 pop_qd_time = -19000 #pop QDs at t-24s
-qd_wait_time = -16000 #start post pop wait at t-20s
-pre_press_time = -10000 #start prepress at t-12s
+qd_wait_time = -16000 #start post pop wait at t-16s
+activate_purge_time = -15000 #activate purge at t-15s
+pre_press_time = -12000 #start prepress at t-12s
 pre_press_wait_time = 3000 #wait for 3s before checking prepress sucess condition
 fire_igniter_time = -3000 #fire igniter at t-3s
 fire_actuator_time = 0 #fire actuator at t-0s
 deenergize_pyros_time = 1000 #deenergize pyros 1s after ignition
 
-pop_vent_qds_time = pop_qd_time 
-pop_fill_qds_time = pop_qd_time + 1000
+
+pop_fill_qds_time = pop_qd_time
+pop_vent_qds_time = pop_qd_time + 1000
 pop_helium_qd_time = pop_qd_time + 2000
 qd_pop_duration = 1 #flow n2 through the pushers for 1 second
 
@@ -220,8 +221,8 @@ def wait_for_timestamps():
     HELIUM_QD_CMD = "SV_QD_03_cmd"
     HELIUM_QD_STATE = "SV_QD_03_state"
 
-    FILL_QD_CMD = "SV_QD_01_cmd"
-    FILL_QD_STATE = "SV_QD_01_state"
+    FILL_QD_CMD = "SV_QD_02_cmd"
+    FILL_QD_STATE = "SV_QD_02_state"
     
     if onboard_active:
         COPV_PRESSURE = "PT_HE_201"
@@ -542,8 +543,8 @@ def wait_for_timestamps():
 
                             if current_t_time > pre_press_time and marottas_regulated_flag == False:
                                 if onboard_active:
-                                    #cmd.send_command("SET_OX_STATE_REGULATE")
-                                    #cmd.send_command("SET_FU_STATE_REGULATE")
+                                    cmd.send_command("SET_OX_STATE_REGULATE")
+                                    cmd.send_command("SET_FU_STATE_REGULATE")
                                     print("0")
                                 else:
                                     log_event("FAILED TO REGULATE, ONBOARD INACTIVE", writer, log_key)

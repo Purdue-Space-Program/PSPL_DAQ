@@ -226,7 +226,7 @@ def wait_for_trigger():
                     arm_flag = False
                     log_event('Abort Disarmed.', writer, log_key)  
             for v in frame [fu_redline_key]:
-                if v == 1:
+                if v == 1 and arm_flag:
                     log_event("Fu upper pressure redline hit, starting abort sequence", writer, log_key)
                     writer.write({status_key: [0]})
                     writer.write({abort_active_key: [1]})
@@ -236,7 +236,7 @@ def wait_for_trigger():
                     writer.write({abort_active_key: [0]})
 
             for v in frame [ox_redline_key]:
-                if v == 1:
+                if v == 1 and arm_flag:
                     log_event("Ox upper pressure redline hit, starting abort sequence", writer, log_key)
                     writer.write({status_key: [0]})
                     writer.write({abort_active_key: [1]})
@@ -254,11 +254,7 @@ def wait_for_trigger():
                     run_abort(writer, log_key)
                     writer.write({status_key: [1]})
                     writer.write({abort_active_key: [0]})
-            '''
-            for time in frame[t_clock_key]:
-                if time % 15000 == 0 and time < -25000:
-                    log_event('Abort status good', writer, status_log_key)
-            '''         
+                
             writer.write({armed_state_key: [1 if arm_flag else 0]})
             writer.write({status_key: [1 if active_flag else 0]})
 
