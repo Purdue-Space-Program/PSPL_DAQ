@@ -22,7 +22,7 @@ def run_abort(writer, log_key):
     # Connect to the Synnax system
     try:
         client = sy.Synnax(
-            host="192.168.2.59",
+            host="192.168.1.15",
             port=9090,
             username="Bill",
             password="Bill",
@@ -94,7 +94,7 @@ def wait_for_trigger():
     #aquire synnax connection
     try:
         client = sy.Synnax(
-            host="192.168.2.59",
+            host="192.168.1.15",
             port=9090,
             username="Bill",
             password="Bill",

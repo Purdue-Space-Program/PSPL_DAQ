@@ -2,7 +2,7 @@ import synnax as sy
 from datetime import datetime
 
 client = sy.Synnax(
-    host= "192.168.2.59",
+    host= "192.168.1.15",
     port=9090,
     username='Bill',
     password='Bill',
