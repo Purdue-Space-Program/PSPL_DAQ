@@ -347,31 +347,32 @@ def wait_for_timestamps():
             with client.open_streamer(input_keys) as streamer, \
                 client.open_writer(start=sy.TimeStamp.now(), channels= output_keys, enable_auto_commit=True) as writer:
 
+                #if broken remove float() and :.2f
                 log_event("Connected to Synnax for trigger monitoring", writer, log_key)
                 log_event("Listening for trigger signals", writer, log_key)
-                fu_lower_setpoint = client.read_latest(FU_LOWER)
-                fu_upper_setpoint = client.read_latest(FU_UPPER)
-                fu_redline_setpoint = client.read_latest(FU_REDLINE)
-                ox_lower_setpoint = client.read_latest(OX_LOWER)
-                ox_upper_setpoint = client.read_latest(OX_UPPER)
-                ox_redline_setpoint = client.read_latest(OX_REDLINE)
+                fu_lower_setpoint = float(client.read_latest(FU_LOWER))
+                fu_upper_setpoint = float(client.read_latest(FU_UPPER))
+                fu_redline_setpoint = float(client.read_latest(FU_REDLINE))
+                ox_lower_setpoint = float(client.read_latest(OX_LOWER))
+                ox_upper_setpoint = float(client.read_latest(OX_UPPER))
+                ox_redline_setpoint = float(client.read_latest(OX_REDLINE))
 
                 fu_lower = fu_lower_setpoint - prepress_margin
                 fu_upper = fu_redline_setpoint - prepress_margin
                 ox_lower = ox_lower_setpoint - prepress_margin
                 ox_upper = ox_redline_setpoint - prepress_margin
 
-                log_event(f"FU Lower BB Setpoint: {fu_lower_setpoint}psi", writer, log_key)
-                log_event(f"FU Upper BB Setpoint: {fu_upper_setpoint}psi", writer, log_key)
-                log_event(f"FU Redline Setpoint: {fu_redline_setpoint}psi", writer, log_key)
-                log_event(f"OX Lower BB Setpoint: {ox_lower_setpoint}psi", writer, log_key)
-                log_event(f"OX Upper BB Setpoint: {ox_upper_setpoint}psi", writer, log_key)
-                log_event(f"OX Redline Setpoint: {ox_redline_setpoint}psi", writer, log_key)
+                log_event(f"FU Lower BB Setpoint: {fu_lower_setpoint:.2f}psi", writer, log_key)
+                log_event(f"FU Upper BB Setpoint: {fu_upper_setpoint:.2f}psi", writer, log_key)
+                log_event(f"FU Redline Setpoint: {fu_redline_setpoint:.2f}psi", writer, log_key)
+                log_event(f"OX Lower BB Setpoint: {ox_lower_setpoint:.2f}psi", writer, log_key)
+                log_event(f"OX Upper BB Setpoint: {ox_upper_setpoint:.2f}psi", writer, log_key)
+                log_event(f"OX Redline Setpoint: {ox_redline_setpoint:.2f}psi", writer, log_key)
 
-                log_event(f"FU Lower Validation Setpoint: {fu_lower}psi", writer, log_key)
-                log_event(f"FU Upper Validation Setpoint: {fu_upper}psi", writer, log_key)
-                log_event(f"OX Lower Validation Setpoint: {ox_lower}psi", writer, log_key)
-                log_event(f"OX Upper Validation Setpoint: {ox_upper}psi", writer, log_key)
+                log_event(f"FU Lower Validation Setpoint: {fu_lower:.2f}psi", writer, log_key)
+                log_event(f"FU Upper Validation Setpoint: {fu_upper:.2f}psi", writer, log_key)
+                log_event(f"OX Lower Validation Setpoint: {ox_lower:.2f}psi", writer, log_key)
+                log_event(f"OX Upper Validation Setpoint: {ox_upper:.2f}psi", writer, log_key)
                 writer.write({status_key: [1]})
 
                 refrence_time = sy.TimeStamp.now()
@@ -405,29 +406,29 @@ def wait_for_timestamps():
                         current_t_time = v 
                     for v in frame[pull_BB_setpoints_key]:
                         if v == 1:
-                            fu_lower_setpoint = client.read_latest(FU_LOWER)
-                            fu_upper_setpoint = client.read_latest(FU_UPPER)
-                            fu_redline_setpoint = client.read_latest(FU_REDLINE)
-                            ox_lower_setpoint = client.read_latest(OX_LOWER)
-                            ox_upper_setpoint = client.read_latest(OX_UPPER)
-                            ox_redline_setpoint = client.read_latest(OX_REDLINE)
+                            fu_lower_setpoint = float(client.read_latest(FU_LOWER))
+                            fu_upper_setpoint = float(client.read_latest(FU_UPPER))
+                            fu_redline_setpoint = float(client.read_latest(FU_REDLINE))
+                            ox_lower_setpoint = float(client.read_latest(OX_LOWER))
+                            ox_upper_setpoint = float(client.read_latest(OX_UPPER))
+                            ox_redline_setpoint = float(client.read_latest(OX_REDLINE))
 
                             fu_lower = fu_lower_setpoint - prepress_margin
                             fu_upper = fu_redline_setpoint - prepress_margin
                             ox_lower = ox_lower_setpoint - prepress_margin
                             ox_upper = ox_redline_setpoint - prepress_margin
 
-                            log_event(f"FU Lower BB Setpoint: {fu_lower_setpoint}psi", writer, log_key)
-                            log_event(f"FU Upper BB Setpoint: {fu_upper_setpoint}psi", writer, log_key)
-                            log_event(f"FU Redline Setpoint: {fu_redline_setpoint}psi", writer, log_key)
-                            log_event(f"OX Lower BB Setpoint: {ox_lower_setpoint}psi", writer, log_key)
-                            log_event(f"OX Upper BB Setpoint: {ox_upper_setpoint}psi", writer, log_key)
-                            log_event(f"OX Redline Setpoint: {ox_redline_setpoint}psi", writer, log_key)
+                            log_event(f"FU Lower BB Setpoint: {fu_lower_setpoint:.2f}psi", writer, log_key)
+                            log_event(f"FU Upper BB Setpoint: {fu_upper_setpoint:.2f}psi", writer, log_key)
+                            log_event(f"FU Redline Setpoint: {fu_redline_setpoint:.2f}psi", writer, log_key)
+                            log_event(f"OX Lower BB Setpoint: {ox_lower_setpoint:.2f}psi", writer, log_key)
+                            log_event(f"OX Upper BB Setpoint: {ox_upper_setpoint:.2f}psi", writer, log_key)
+                            log_event(f"OX Redline Setpoint: {ox_redline_setpoint:.2f}psi", writer, log_key)
 
-                            log_event(f"FU Lower Validation Setpoint: {fu_lower}psi", writer, log_key)
-                            log_event(f"FU Upper Validation Setpoint: {fu_upper}psi", writer, log_key)
-                            log_event(f"OX Lower Validation Setpoint: {ox_lower}psi", writer, log_key)
-                            log_event(f"OX Upper Validation Setpoint: {ox_upper}psi", writer, log_key)
+                            log_event(f"FU Lower Validation Setpoint: {fu_lower:.2f}psi", writer, log_key)
+                            log_event(f"FU Upper Validation Setpoint: {fu_upper:.2f}psi", writer, log_key)
+                            log_event(f"OX Lower Validation Setpoint: {ox_lower:.2f}psi", writer, log_key)
+                            log_event(f"OX Upper Validation Setpoint: {ox_upper:.2f}psi", writer, log_key)
                     for v in frame[record_data_key]:
                         if v == 1:
                             if recording_data_flag == False:
@@ -584,6 +585,7 @@ def wait_for_timestamps():
                                 run_event(ctrl, ACTUATOR_CMD, DEENERGIZE)
                                 run_event(ctrl, IGNITOR_CMD, DEENERGIZE)
                                 log_event("Pyros Deenergized", writer, log_key)
+                                pyros_deenergized_flag = True
 
                         else:
                             if ctrl[T_CLOCK_STATE] == 1:
