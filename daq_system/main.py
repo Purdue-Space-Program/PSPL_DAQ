@@ -26,7 +26,7 @@ def main():
             logger.info(f"\nProcessing {device_name}...")
 
             # Get device
-            device = daq_system.client.hardware.devices.retrieve(
+            device = daq_system.client.devices.retrieve(
                 model="USB-6343", location=device_name
             )
 

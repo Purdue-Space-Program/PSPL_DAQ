@@ -1,7 +1,7 @@
 from typing import Optional, Tuple, List
 import logging
 import synnax as sy
-from synnax.hardware import ni
+from synnax import ni
 import pandas as pd
 import json
 import time
@@ -50,7 +50,7 @@ class DAQSystem:
         """
         try:
             # Try to get driver status
-            if not hasattr(self.client.hardware, "drivers"):
+            if not hasattr(self.client, "drivers"):
                 # This is expected behavior for some Synnax versions
                 logger.debug(
                     "Synnax client does not have drivers attribute. "
@@ -58,7 +58,7 @@ class DAQSystem:
                 )
                 # Try to verify driver status by attempting to retrieve devices
                 try:
-                    self.client.hardware.devices.retrieve(location="Dev5")
+                    self.client.devices.retrieve(location="Dev5")
                     return True
                 except Exception as e:
                     logger.error(f"Failed to verify driver status: {e}")

@@ -1,6 +1,6 @@
 import pandas as pd
 import synnax as sy
-from synnax.hardware import ni
+from synnax import ni
 from .channel_factory import ChannelFactory
 
 STATE_RATE = 1000  # Hz
