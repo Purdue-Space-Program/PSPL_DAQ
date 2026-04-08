@@ -28,7 +28,6 @@ class DAQSystem:
     def __init__(self, config: DAQConfig):
         self.config = config
         self.client = self._connect_to_synnax()
-        self._validate_device_connection()  # Add validation step
         self.channel_factory = ChannelFactory(self.client)
 
     def _connect_to_synnax(self) -> sy.Synnax:
@@ -267,7 +266,7 @@ class DAQSystem:
 
         return tuple(tasks)
 
-    def configure_task(self, task: Optional[ni.Task], task_type: str) -> None:
+    def configure_task(self, task, task_type: str) -> None:
         """Configure a task if it has channels"""
         if not task or not task.config.channels:
             logger.info(f"No channels added to {task_type} task.")
