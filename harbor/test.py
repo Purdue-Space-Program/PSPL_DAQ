@@ -13,7 +13,7 @@ def log_event(message, writer, log_key):
     writer.write({log_key: [fullMessage]})
 
 def read_data():
-    #aquire synnax connection
+    # acquire synnax connection
     try:
         client = sy.Synnax(
             host="128.46.118.59",

@@ -33,7 +33,7 @@ def regulate(writer, log_key, pressure_setpoint):
         log_event(f"Regulator failed to activate:  {str(e)}", writer, log_key)
 
 def wait_for_trigger():
-    #aquire synnax connection
+    # acquire synnax connection
     try:
         client = sy.Synnax(
             host="128.46.118.59",

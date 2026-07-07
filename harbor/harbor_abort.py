@@ -55,7 +55,7 @@ def run_abort(writer, log_key, close_regulate_key, eth_inlet_cmd_key, eth_outlet
 
                 #Shutoff inlet
                 writer2.write({eth_inlet_cmd_key: [0]})
-                log_event("Inlet closed sucessfully.", writer, log_key)
+                log_event("Inlet closed successfully.", writer, log_key)
 
                 '''
                 ctrl[INLET_CMD] = DEENERGIZE
@@ -65,7 +65,7 @@ def run_abort(writer, log_key, close_regulate_key, eth_inlet_cmd_key, eth_outlet
                     lambda c: c[INLET_STATE] == DEENERGIZE,
                     timeout= 1 * sy.TimeSpan.SECOND, 
                 ):
-                    log_event("Inlet closed sucessfully.", writer, log_key)
+                    log_event("Inlet closed successfully.", writer, log_key)
                 else:
                     log_event("Failed to close inlet.", writer, log_key)
                 '''
@@ -82,7 +82,7 @@ def run_abort(writer, log_key, close_regulate_key, eth_inlet_cmd_key, eth_outlet
                     lambda c: c[OUTLET_STATE] == DEENERGIZE,
                     timeout= 1 * sy.TimeSpan.SECOND, 
                 ):
-                    log_event("Outlet closed sucessfully.", writer, log_key)
+                    log_event("Outlet closed successfully.", writer, log_key)
                 else:
                     log_event("Failed to close outlet.", writer, log_key)
                 '''
@@ -102,7 +102,7 @@ def run_abort(writer, log_key, close_regulate_key, eth_inlet_cmd_key, eth_outlet
         log_event(f"Error occurred during sequence execution: {str(e)}", writer, log_key)
 
 def wait_for_trigger():
-    #aquire synnax connection
+    # acquire synnax connection
     try:
         client = sy.Synnax(
             host="128.46.118.59",
@@ -284,7 +284,7 @@ def wait_for_trigger():
             for v in frame[pt_eth_seal_key]:
                 if v > seal_pressure_redline:
                     if arm_flag and active_flag:
-                        log_event("Seal pressure redline exceded, aborting test.", writer, log_key)
+                        log_event("Seal pressure redline exceeded, aborting test.", writer, log_key)
                         writer.write({status_key: [0]})
                         writer.write({abort_active_key: [1]})
                         writer.write({sequence_active_key: [0]})
@@ -294,7 +294,7 @@ def wait_for_trigger():
             for v in frame[tc_pump_motor_key]:
                 if v > motor_thermal_redline:
                     if arm_flag and active_flag:
-                        log_event("Motor temperature exceded, aborting test.", writer, log_key)
+                        log_event("Motor temperature exceeded, aborting test.", writer, log_key)
                         writer.write({status_key: [0]})
                         writer.write({abort_active_key: [1]})
                         writer.write({sequence_active_key: [0]})
